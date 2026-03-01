@@ -611,4 +611,4 @@ Core service logic is implemented. Some advanced behaviors (fine-grained matchma
 4. Add automated tests for service and controller behavior (especially CSV import/export paths).
 5. Add charting/visual analytics rendering for trend data.
 6. Add optional AI and chess-engine integrations in later planned steps.
-
+7. Improve UI/UX
