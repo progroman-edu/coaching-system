@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">ChessCoach Main</div>
+        <a class="nav-link active" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Matches</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Coach Dashboard</h1>
+            <p class="subtitle">Live analytics from backend API.</p>
+        </div>
+        <section class="grid cols-4">
+            <article class="panel kpi">
+                <p class="subtitle">Total Trainees</p>
+                <h2 id="totalTrainees">0</h2>
+            </article>
+            <article class="panel kpi">
+                <p class="subtitle">Average Rating</p>
+                <h2 id="avgRating">0.00</h2>
+            </article>
+            <article class="panel kpi">
+                <p class="subtitle">Attendance %</p>
+                <h2 id="attendancePct">0.0%</h2>
+            </article>
+            <article class="panel kpi">
+                <p class="subtitle">Matches Played</p>
+                <h2 id="matchesPlayed">0</h2>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h3>Rating Improvement Preview</h3>
+            <form id="trendForm" class="row">
+                <input type="number" id="trendTraineeId" placeholder="Trainee ID for trend" required>
+                <button class="secondary" type="submit">Load Trend</button>
+            </form>
+            <pre id="trendOutput">[]</pre>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/analytics.js"></script>
+</body>
+</html>

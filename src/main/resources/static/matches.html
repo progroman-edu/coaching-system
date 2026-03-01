@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matches</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">ChessCoach Main</div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link active" href="/matches.html">Matches</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Match Scheduling & Results</h1>
+        </div>
+
+        <section class="panel">
+            <h3>Create Match</h3>
+            <form id="scheduleForm" class="grid cols-2">
+                <div><label>Scheduled Date</label><input type="date" name="scheduledDate" required></div>
+                <div><label>Format</label><select name="format"><option>SWISS</option><option>ROUND_ROBIN</option></select></div>
+                <div style="grid-column:1 / -1;"><label>Trainee IDs (comma-separated)</label><input name="traineeIds" required></div>
+                <div style="grid-column:1 / -1;"><button type="submit">Create Match</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Generate Pairings</h3>
+            <form id="pairForm" class="grid cols-2">
+                <div><label>Format</label><select name="format"><option>SWISS</option><option>ROUND_ROBIN</option></select></div>
+                <div><label>Round Number</label><input type="number" name="roundNumber" value="1" required></div>
+                <div style="grid-column:1 / -1;"><label>Trainee IDs (comma-separated)</label><input name="traineeIds" required></div>
+                <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Generate</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Submit Result</h3>
+            <form id="resultForm" class="grid cols-4">
+                <div><label>Match ID</label><input type="number" name="matchId" required></div>
+                <div><label>White Trainee ID</label><input type="number" name="whiteTraineeId" required></div>
+                <div><label>Black Trainee ID</label><input type="number" name="blackTraineeId" required></div>
+                <div><label>&nbsp;</label><span></span></div>
+                <div><label>White Score</label><input type="number" step="0.5" name="whiteScore" required></div>
+                <div><label>Black Score</label><input type="number" step="0.5" name="blackScore" required></div>
+                <div style="grid-column:1 / -1;"><button type="submit">Record Result</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Match History by Trainee</h3>
+            <form id="historyForm" class="row">
+                <input type="number" name="traineeId" placeholder="Trainee ID" required>
+                <button class="secondary" type="submit">Load History</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <table>
+                <thead>
+                <tr>
+                    <th>Match ID</th>
+                    <th>Date</th>
+                    <th>Format</th>
+                    <th>White</th>
+                    <th>Black</th>
+                    <th>Result</th>
+                </tr>
+                </thead>
+                <tbody id="matchRows"></tbody>
+            </table>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/matches.js"></script>
+</body>
+</html>

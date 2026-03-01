@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainees</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">ChessCoach Main</div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Matches</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Trainee Management</h1>
+            <p class="subtitle">Create trainees, filter list, and upload photos.</p>
+        </div>
+
+        <section class="panel">
+            <h3>Create Trainee</h3>
+            <form id="traineeForm" class="grid cols-2">
+                <div><label>Name</label><input name="name" required></div>
+                <div><label>Age</label><input type="number" name="age" required></div>
+                <div><label>Address</label><input name="address" required></div>
+                <div><label>Grade Level</label><input name="gradeLevel" required></div>
+                <div><label>Course/Strand</label><input name="courseStrand" required></div>
+                <div><label>Current Rating</label><input type="number" name="currentRating" required></div>
+                <div><label>Highest Rating</label><input type="number" name="highestRating"></div>
+                <div><label>Ranking</label><input type="number" name="ranking"></div>
+                <div style="grid-column:1 / -1;"><button type="submit">Save Trainee</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Upload Trainee Photo</h3>
+            <form id="photoForm" class="grid cols-2">
+                <div><label>Trainee ID</label><input type="number" name="traineeId" required></div>
+                <div><label>Image File</label><input type="file" name="file" accept="image/*" required></div>
+                <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Upload</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Filter Trainees</h3>
+            <form id="filterForm" class="grid cols-4">
+                <div><label>Rating Min</label><input type="number" name="ratingMin"></div>
+                <div><label>Rating Max</label><input type="number" name="ratingMax"></div>
+                <div><label>Age Min</label><input type="number" name="ageMin"></div>
+                <div><label>Age Max</label><input type="number" name="ageMax"></div>
+                <div><label>Course/Strand</label><input name="courseStrand"></div>
+                <div><label>Page</label><input type="number" name="page" value="0"></div>
+                <div><label>Size</label><input type="number" name="size" value="20"></div>
+                <div><label>&nbsp;</label><button type="submit">Apply Filters</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Course</th>
+                    <th>Rating</th>
+                    <th>Rank</th>
+                    <th>Photo Path</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="traineeRows"></tbody>
+            </table>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/trainees.js"></script>
+</body>
+</html>

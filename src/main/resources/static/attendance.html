@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">ChessCoach Main</div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Matches</a>
+        <a class="nav-link active" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Attendance Tracking</h1>
+        </div>
+
+        <section class="panel">
+            <h3>Record Attendance</h3>
+            <form id="attendanceForm" class="grid cols-2">
+                <div><label>Trainee ID</label><input type="number" name="traineeId" required></div>
+                <div><label>Date</label><input type="date" name="attendanceDate" required></div>
+                <div>
+                    <label>Present?</label>
+                    <select name="present">
+                        <option value="true">Present</option>
+                        <option value="false">Absent</option>
+                    </select>
+                </div>
+                <div><label>Remarks</label><input name="remarks"></div>
+                <div style="grid-column:1 / -1;"><button type="submit">Save Attendance</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Attendance Report</h3>
+            <form id="reportForm" class="grid cols-4">
+                <div><label>Start Date</label><input type="date" name="startDate" required></div>
+                <div><label>End Date</label><input type="date" name="endDate" required></div>
+                <div><label>Trainee ID (optional)</label><input type="number" name="traineeId"></div>
+                <div><label>&nbsp;</label><button class="secondary" type="submit">Generate</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <table>
+                <thead>
+                <tr>
+                    <th>Trainee ID</th>
+                    <th>Name</th>
+                    <th>Present Sessions</th>
+                    <th>Total Sessions</th>
+                    <th>Attendance %</th>
+                </tr>
+                </thead>
+                <tbody id="attendanceRows"></tbody>
+            </table>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/attendance.js"></script>
+</body>
+</html>

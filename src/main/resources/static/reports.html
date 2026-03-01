@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">ChessCoach Main</div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Matches</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link active" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Reports and Data Import/Export</h1>
+        </div>
+
+        <section class="panel">
+            <h3>Export</h3>
+            <form id="exportForm" class="grid cols-2">
+                <div>
+                    <label>Type</label>
+                    <select name="type">
+                        <option value="trainees">trainees</option>
+                        <option value="attendance">attendance</option>
+                        <option value="matches">matches</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Format</label>
+                    <select name="format">
+                        <option value="csv">csv</option>
+                        <option value="xlsx">xlsx</option>
+                    </select>
+                </div>
+                <div style="grid-column:1 / -1;"><button type="submit">Prepare Export</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Import Trainees CSV</h3>
+            <form id="importForm" class="grid cols-2">
+                <div><label>CSV File</label><input type="file" name="file" accept=".csv,text/csv"></div>
+                <div><label>&nbsp;</label><button class="secondary" type="submit">Upload CSV</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Output</h3>
+            <pre id="output">{}</pre>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/reports.js"></script>
+</body>
+</html>
