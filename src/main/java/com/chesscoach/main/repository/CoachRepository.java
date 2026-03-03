@@ -1,3 +1,4 @@
+// This file contains project logic for CoachRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Coach;
@@ -8,3 +9,4 @@ import java.util.Optional;
 public interface CoachRepository extends JpaRepository<Coach, Long> {
     Optional<Coach> findByEmail(String email);
 }
+

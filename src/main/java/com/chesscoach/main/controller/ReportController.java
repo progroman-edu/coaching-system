@@ -1,3 +1,4 @@
+// This file contains project logic for ReportController.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;
@@ -72,3 +73,4 @@ public class ReportController {
             .body(resource);
     }
 }
+

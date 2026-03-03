@@ -1,3 +1,4 @@
+// This file provides shared frontend UI helper functions.
 export function showMessage(el, text, ok = true) {
     if (!el) return;
     el.className = `msg ${ok ? "ok" : "err"}`;
@@ -15,3 +16,4 @@ export function fillTableBody(tbody, rowsHtml) {
     if (!tbody) return;
     tbody.innerHTML = rowsHtml || "<tr><td colspan='20'>No data</td></tr>";
 }
+

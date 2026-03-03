@@ -1,3 +1,4 @@
+// This file contains project logic for Coach.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.CascadeType;
@@ -72,3 +73,4 @@ public class Coach extends AuditableEntity {
         this.trainees = trainees;
     }
 }
+

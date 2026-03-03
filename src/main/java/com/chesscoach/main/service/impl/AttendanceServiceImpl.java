@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.attendance.AttendanceRecordRequest;
@@ -99,3 +100,4 @@ public class AttendanceServiceImpl implements AttendanceService {
         return report;
     }
 }
+

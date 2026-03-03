@@ -1,3 +1,4 @@
+// This file contains project logic for MatchResult.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
@@ -124,3 +125,4 @@ public class MatchResult extends AuditableEntity {
         this.playedAt = playedAt;
     }
 }
+

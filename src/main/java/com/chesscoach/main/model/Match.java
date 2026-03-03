@@ -1,3 +1,4 @@
+// This file contains project logic for Match.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.CascadeType;
@@ -118,3 +119,4 @@ public class Match extends AuditableEntity {
         this.results = results;
     }
 }
+

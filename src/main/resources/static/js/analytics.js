@@ -1,3 +1,4 @@
+// This file powers dashboard analytics interactions on the frontend.
 import { api } from "./api.js";
 import { showMessage } from "./ui.js";
 
@@ -33,3 +34,4 @@ trendForm?.addEventListener("submit", async (e) => {
         showMessage(msg, err.message, false);
     }
 });
+

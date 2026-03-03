@@ -1,3 +1,4 @@
+// This file contains project logic for MatchCreateRequest.
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotEmpty;
@@ -41,3 +42,4 @@ public class MatchCreateRequest {
         this.format = format;
     }
 }
+

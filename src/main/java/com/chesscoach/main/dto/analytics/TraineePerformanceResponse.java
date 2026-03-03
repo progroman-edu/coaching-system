@@ -1,3 +1,4 @@
+// This file contains project logic for TraineePerformanceResponse.
 package com.chesscoach.main.dto.analytics;
 
 public class TraineePerformanceResponse {
@@ -83,3 +84,4 @@ public class TraineePerformanceResponse {
         this.attendancePercentage = attendancePercentage;
     }
 }
+

@@ -1,4 +1,4 @@
-﻿# Chess Coach Management System (`main`)
+# Chess Coach Management System (`main`)
 
 This project is a Spring Boot backend for a chess coach management system.
 It currently includes project structure, REST API architecture scaffolding, and database schema/entity mappings.

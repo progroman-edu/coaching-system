@@ -1,3 +1,4 @@
+-- This file documents the database schema and indexes for reference.
 CREATE TABLE IF NOT EXISTS coaches (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     full_name VARCHAR(120) NOT NULL,
@@ -133,3 +134,4 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX idx_notifications_trainee ON notifications(trainee_id);
 CREATE INDEX idx_notifications_type ON notifications(type);
 CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+

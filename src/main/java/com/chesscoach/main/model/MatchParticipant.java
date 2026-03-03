@@ -1,3 +1,4 @@
+// This file contains project logic for MatchParticipant.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
@@ -119,3 +120,4 @@ public class MatchParticipant extends AuditableEntity {
         this.bye = bye;
     }
 }
+

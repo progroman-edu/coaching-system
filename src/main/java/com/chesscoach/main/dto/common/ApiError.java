@@ -1,3 +1,4 @@
+// This file contains project logic for ApiError.
 package com.chesscoach.main.dto.common;
 
 public class ApiError {
@@ -28,3 +29,4 @@ public class ApiError {
         this.detail = detail;
     }
 }
+

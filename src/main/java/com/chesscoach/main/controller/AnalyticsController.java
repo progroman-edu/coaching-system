@@ -1,3 +1,4 @@
+// This file contains project logic for AnalyticsController.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;
@@ -49,3 +50,4 @@ public class AnalyticsController {
         return ResponseEntity.ok(ApiResponse.ok("Trainee rating trend", data, request.getRequestURI()));
     }
 }
+

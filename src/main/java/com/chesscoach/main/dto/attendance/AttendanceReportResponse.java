@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceReportResponse.
 package com.chesscoach.main.dto.attendance;
 
 import java.time.LocalDate;
@@ -67,3 +68,4 @@ public class AttendanceReportResponse {
         this.attendancePercentage = attendancePercentage;
     }
 }
+

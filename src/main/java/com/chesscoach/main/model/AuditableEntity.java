@@ -1,3 +1,4 @@
+// This file contains project logic for AuditableEntity.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
@@ -44,3 +45,4 @@ public abstract class AuditableEntity {
         this.updatedAt = updatedAt;
     }
 }
+

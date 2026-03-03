@@ -1,3 +1,4 @@
+// This file contains project logic for MatchResultRequest.
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotNull;
@@ -59,3 +60,4 @@ public class MatchResultRequest {
         this.blackScore = blackScore;
     }
 }
+

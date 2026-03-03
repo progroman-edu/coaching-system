@@ -1,3 +1,4 @@
+// This file starts the Spring Boot application.
 package com.chesscoach.main;
 
 import org.springframework.boot.SpringApplication;
@@ -11,3 +12,4 @@ public class MainApplication {
 	}
 
 }
+

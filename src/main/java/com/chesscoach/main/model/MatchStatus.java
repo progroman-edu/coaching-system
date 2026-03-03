@@ -1,3 +1,4 @@
+// This file contains project logic for MatchStatus.
 package com.chesscoach.main.model;
 
 public enum MatchStatus {
@@ -5,3 +6,4 @@ public enum MatchStatus {
     COMPLETED,
     CANCELLED
 }
+

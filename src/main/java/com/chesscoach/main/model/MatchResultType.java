@@ -1,3 +1,4 @@
+// This file contains project logic for MatchResultType.
 package com.chesscoach.main.model;
 
 public enum MatchResultType {
@@ -6,3 +7,4 @@ public enum MatchResultType {
     DRAW,
     BYE
 }
+

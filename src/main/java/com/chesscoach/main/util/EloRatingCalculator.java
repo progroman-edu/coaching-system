@@ -1,3 +1,4 @@
+// This file provides simplified ELO rating calculation utilities.
 package com.chesscoach.main.util;
 
 public final class EloRatingCalculator {
@@ -16,3 +17,4 @@ public final class EloRatingCalculator {
         return (int) Math.round(currentRating + kFactor * (actualScore - expectedScore));
     }
 }
+

@@ -1,3 +1,4 @@
+// This file verifies that the Spring application context starts successfully.
 package com.chesscoach.main;
 
 import org.junit.jupiter.api.Test;
@@ -12,3 +13,4 @@ class MainApplicationTests {
     void contextLoads() {
     }
 }
+

@@ -1,3 +1,4 @@
+// This file contains reusable fetch-based API client helpers for frontend pages.
 const API_BASE = "/api";
 
 async function request(path, options = {}) {
@@ -56,3 +57,4 @@ export const api = {
         return request("/reports/import/trainees", { method: "POST", body: formData });
     }
 };
+

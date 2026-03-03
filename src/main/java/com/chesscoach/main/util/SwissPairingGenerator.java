@@ -1,3 +1,4 @@
+// This file generates Swiss-style pairings from ordered trainee identifiers.
 package com.chesscoach.main.util;
 
 import java.util.ArrayList;
@@ -21,3 +22,4 @@ public final class SwissPairingGenerator {
     public record Pairing(Long whiteTraineeId, Long blackTraineeId) {
     }
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for MatchRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Match;
@@ -14,3 +15,4 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     List<Match> findByStatusAndScheduledDateGreaterThanEqualOrderByScheduledDateAsc(MatchStatus status, LocalDate fromDate);
 }
+

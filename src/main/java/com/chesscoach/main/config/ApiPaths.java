@@ -1,3 +1,4 @@
+// This file centralizes API route constants used by controllers.
 package com.chesscoach.main.config;
 
 public final class ApiPaths {

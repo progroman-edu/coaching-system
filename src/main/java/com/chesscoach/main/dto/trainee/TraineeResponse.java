@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeResponse.
 package com.chesscoach.main.dto.trainee;
 
 public class TraineeResponse {
@@ -92,3 +93,4 @@ public class TraineeResponse {
         this.photoPath = photoPath;
     }
 }
+

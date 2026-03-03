@@ -1,3 +1,4 @@
+// This file contains project logic for RatingServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.model.MatchResult;
@@ -75,3 +76,4 @@ public class RatingServiceImpl implements RatingService {
         return trainee.getHighestRating() != null ? trainee.getHighestRating() : trainee.getCurrentRating();
     }
 }
+

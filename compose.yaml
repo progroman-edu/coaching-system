@@ -1,3 +1,4 @@
+# This file defines the local multi-container runtime stack for app and database.
 services:
   mysql:
     image: mysql:8.4
@@ -39,3 +40,4 @@ services:
 volumes:
   mysql_data:
   app_uploads:
+

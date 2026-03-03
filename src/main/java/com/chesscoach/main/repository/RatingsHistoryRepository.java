@@ -1,3 +1,4 @@
+// This file contains project logic for RatingsHistoryRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.RatingsHistory;
@@ -9,3 +10,4 @@ public interface RatingsHistoryRepository extends JpaRepository<RatingsHistory, 
 
     List<RatingsHistory> findByTraineeIdOrderByCreatedAtDesc(Long traineeId);
 }
+

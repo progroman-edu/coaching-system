@@ -1,3 +1,4 @@
+// This file contains project logic for MatchSummaryResponse.
 package com.chesscoach.main.dto.match;
 
 import java.time.LocalDate;
@@ -58,3 +59,4 @@ public class MatchSummaryResponse {
         this.result = result;
     }
 }
+

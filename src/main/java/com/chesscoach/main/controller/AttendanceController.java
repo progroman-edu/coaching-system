@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceController.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;
@@ -50,3 +51,4 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.ok("Attendance report", data, request.getRequestURI()));
     }
 }
+

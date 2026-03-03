@@ -1,3 +1,4 @@
+// This file verifies a basic service flow using the test profile.
 package com.chesscoach.main;
 
 import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
@@ -40,3 +41,4 @@ class ServiceSmokeTest {
         assertThat(dashboard.getTotalTrainees()).isGreaterThanOrEqualTo(1);
     }
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for DashboardAnalyticsResponse.
 package com.chesscoach.main.dto.analytics;
 
 public class DashboardAnalyticsResponse {
@@ -38,3 +39,4 @@ public class DashboardAnalyticsResponse {
         this.matchesPlayed = matchesPlayed;
     }
 }
+

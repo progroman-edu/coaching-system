@@ -1,3 +1,4 @@
+// This file contains project logic for AnalyticsService.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
@@ -13,3 +14,4 @@ public interface AnalyticsService {
 
     List<RatingTrendPointResponse> getRatingTrend(Long traineeId);
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for NotificationType.
 package com.chesscoach.main.model;
 
 public enum NotificationType {
@@ -6,3 +7,4 @@ public enum NotificationType {
     MISSING_ATTENDANCE,
     GENERAL
 }
+

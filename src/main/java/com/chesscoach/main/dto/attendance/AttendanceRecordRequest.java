@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceRecordRequest.
 package com.chesscoach.main.dto.attendance;
 
 import jakarta.validation.constraints.NotNull;
@@ -49,3 +50,4 @@ public class AttendanceRecordRequest {
         this.remarks = remarks;
     }
 }
+

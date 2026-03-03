@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Attendance;
@@ -19,3 +20,4 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     List<Attendance> findByAttendanceDateBetweenOrderByAttendanceDateAsc(LocalDate startDate, LocalDate endDate);
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Trainee;
@@ -34,3 +35,4 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
 
     List<Trainee> findAllByOrderByCurrentRatingDescIdAsc();
 }
+

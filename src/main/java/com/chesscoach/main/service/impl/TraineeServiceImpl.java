@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.trainee.TraineeRequest;
@@ -140,3 +141,4 @@ public class TraineeServiceImpl implements TraineeService {
         return response;
     }
 }
+

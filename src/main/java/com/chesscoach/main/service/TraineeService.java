@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeService.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.trainee.TraineeRequest;
@@ -27,3 +28,4 @@ public interface TraineeService {
 
     void delete(Long id);
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for AttendanceService.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.attendance.AttendanceRecordRequest;
@@ -11,3 +12,4 @@ public interface AttendanceService {
 
     List<AttendanceReportResponse> getAttendanceReport(LocalDate startDate, LocalDate endDate, Long traineeId);
 }
+

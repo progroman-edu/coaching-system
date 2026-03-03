@@ -1,3 +1,4 @@
+// This file contains project logic for MatchService.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.match.MatchCreateRequest;
@@ -18,3 +19,4 @@ public interface MatchService {
 
     List<MatchSummaryResponse> getHistoryByTrainee(Long traineeId);
 }
+

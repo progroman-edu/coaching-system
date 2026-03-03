@@ -1,3 +1,4 @@
+// This file powers trainee CRUD, filtering, and photo upload interactions.
 import { api } from "./api.js";
 import { clearMessage, fillTableBody, showMessage } from "./ui.js";
 
@@ -84,3 +85,4 @@ photoForm?.addEventListener("submit", async (e) => {
 });
 
 loadTrainees();
+

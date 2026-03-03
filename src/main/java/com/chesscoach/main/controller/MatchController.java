@@ -1,3 +1,4 @@
+// This file contains project logic for MatchController.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;
@@ -76,3 +77,4 @@ public class MatchController {
         return ResponseEntity.ok(ApiResponse.ok("Match history for trainee " + traineeId, data, request.getRequestURI()));
     }
 }
+

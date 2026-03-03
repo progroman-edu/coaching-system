@@ -1,3 +1,4 @@
+// This file contains project logic for ReportServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.report.ReportExportResponse;
@@ -283,3 +284,4 @@ public class ReportServiceImpl implements ReportService {
         return text;
     }
 }
+

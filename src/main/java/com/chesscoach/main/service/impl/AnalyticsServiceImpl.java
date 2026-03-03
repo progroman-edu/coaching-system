@@ -1,3 +1,4 @@
+// This file contains project logic for AnalyticsServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
@@ -134,3 +135,4 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             .toList();
     }
 }
+

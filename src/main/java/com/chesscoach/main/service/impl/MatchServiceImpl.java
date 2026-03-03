@@ -1,3 +1,4 @@
+// This file contains project logic for MatchServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.match.MatchCreateRequest;
@@ -239,3 +240,4 @@ public class MatchServiceImpl implements MatchService {
     }
 
 }
+

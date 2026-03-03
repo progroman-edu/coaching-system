@@ -1,3 +1,4 @@
+// This file contains project logic for ReportExportResponse.
 package com.chesscoach.main.dto.report;
 
 public class ReportExportResponse {
@@ -38,3 +39,4 @@ public class ReportExportResponse {
         this.downloadPath = downloadPath;
     }
 }
+

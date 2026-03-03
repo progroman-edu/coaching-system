@@ -1,3 +1,4 @@
+// This file powers attendance recording and report loading interactions.
 import { api } from "./api.js";
 import { fillTableBody, showMessage } from "./ui.js";
 
@@ -39,3 +40,4 @@ reportForm?.addEventListener("submit", async (e) => {
         showMessage(msg, err.message, false);
     }
 });
+

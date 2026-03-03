@@ -1,3 +1,4 @@
+// This file contains project logic for MatchParticipantRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.MatchParticipant;
@@ -11,3 +12,4 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 
     List<MatchParticipant> findByTraineeIdOrderByCreatedAtDesc(Long traineeId);
 }
+

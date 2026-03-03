@@ -1,3 +1,4 @@
+// This file generates round-robin pairings for a given round.
 package com.chesscoach.main.util;
 
 import java.util.ArrayList;
@@ -47,3 +48,4 @@ public final class RoundRobinGenerator {
     public record Pairing(Long whiteTraineeId, Long blackTraineeId) {
     }
 }
+

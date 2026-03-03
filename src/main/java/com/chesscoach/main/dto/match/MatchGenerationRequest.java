@@ -1,3 +1,4 @@
+// This file contains project logic for MatchGenerationRequest.
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.Min;
@@ -31,3 +32,4 @@ public class MatchGenerationRequest {
         this.roundNumber = roundNumber;
     }
 }
+

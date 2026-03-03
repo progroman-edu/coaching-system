@@ -1,3 +1,4 @@
+// This file converts application exceptions into consistent API error responses.
 package com.chesscoach.main.exception;
 
 import com.chesscoach.main.dto.common.ApiError;
@@ -60,3 +61,4 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
+

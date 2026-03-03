@@ -1,3 +1,4 @@
+// This file contains project logic for MatchResultRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.MatchResult;
@@ -11,3 +12,4 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Long> 
 
     List<MatchResult> findByWhiteTraineeIdOrBlackTraineeIdOrderByPlayedAtDesc(Long whiteTraineeId, Long blackTraineeId);
 }
+

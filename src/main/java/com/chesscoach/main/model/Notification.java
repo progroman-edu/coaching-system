@@ -1,3 +1,4 @@
+// This file contains project logic for Notification.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
@@ -106,3 +107,4 @@ public class Notification extends AuditableEntity {
         this.read = read;
     }
 }
+

@@ -1,3 +1,4 @@
+// This file powers report export and trainee CSV import interactions.
 import { api } from "./api.js";
 import { showMessage } from "./ui.js";
 
@@ -36,3 +37,4 @@ importForm?.addEventListener("submit", async (e) => {
         showMessage(msg, err.message, false);
     }
 });
+

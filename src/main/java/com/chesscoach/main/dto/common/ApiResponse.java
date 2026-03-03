@@ -1,3 +1,4 @@
+// This file contains project logic for ApiResponse.
 package com.chesscoach.main.dto.common;
 
 import java.time.OffsetDateTime;
@@ -86,3 +87,4 @@ public class ApiResponse<T> {
         this.path = path;
     }
 }
+

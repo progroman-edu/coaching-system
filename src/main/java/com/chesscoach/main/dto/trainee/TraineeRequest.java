@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeRequest.
 package com.chesscoach.main.dto.trainee;
 
 import jakarta.validation.constraints.Max;
@@ -114,3 +115,4 @@ public class TraineeRequest {
         this.photoPath = photoPath;
     }
 }
+

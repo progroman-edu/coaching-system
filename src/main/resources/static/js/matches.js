@@ -1,3 +1,4 @@
+// This file powers match creation, pairing generation, and result submission interactions.
 import { api } from "./api.js";
 import { fillTableBody, showMessage } from "./ui.js";
 
@@ -85,3 +86,4 @@ historyForm?.addEventListener("submit", async (e) => {
         showMessage(msg, err.message, false);
     }
 });
+

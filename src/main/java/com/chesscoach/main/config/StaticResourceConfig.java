@@ -1,3 +1,4 @@
+// This file maps uploaded filesystem content to web-accessible static routes.
 package com.chesscoach.main.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,3 +22,4 @@ public class StaticResourceConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**").addResourceLocations(location);
     }
 }
+

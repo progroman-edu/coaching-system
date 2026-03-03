@@ -1,3 +1,4 @@
+// This file contains project logic for ValidationError.
 package com.chesscoach.main.dto.common;
 
 public class ValidationError {
@@ -28,3 +29,4 @@ public class ValidationError {
         this.message = message;
     }
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for RatingTrendPointResponse.
 package com.chesscoach.main.dto.analytics;
 
 import java.time.OffsetDateTime;
@@ -31,3 +32,4 @@ public class RatingTrendPointResponse {
         this.change = change;
     }
 }
+

@@ -1,3 +1,4 @@
+// This file contains project logic for ReportImportResponse.
 package com.chesscoach.main.dto.report;
 
 public class ReportImportResponse {
@@ -38,3 +39,4 @@ public class ReportImportResponse {
         this.failedRows = failedRows;
     }
 }
+

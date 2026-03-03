@@ -1,15 +1,17 @@
-<!doctype html>
+<!-- This file renders the match scheduling and results page. -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
     <title>Matches</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
 <div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
     <aside class="sidebar">
-        <div class="brand">ChessCoach Main</div>
+        <div class="brand"> </div>
         <a class="nav-link" href="/index.html">Dashboard</a>
         <a class="nav-link" href="/trainees.html">Trainees</a>
         <a class="nav-link active" href="/matches.html">Matches</a>
@@ -81,5 +83,7 @@
     </main>
 </div>
 <script type="module" src="/js/matches.js"></script>
+    <script src="/js/sidebar.js"></script>
 </body>
 </html>
+

@@ -1,3 +1,4 @@
+// This file contains project logic for LocalImageStorageServiceImpl.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.service.ImageStorageService;
@@ -64,3 +65,4 @@ public class LocalImageStorageServiceImpl implements ImageStorageService {
         return filename.substring(dot + 1).toLowerCase(Locale.ROOT);
     }
 }
+

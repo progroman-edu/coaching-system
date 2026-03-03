@@ -1,3 +1,4 @@
+// This file contains project logic for NotificationRepository.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Notification;
@@ -15,3 +16,4 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByScheduledAtLessThanEqualAndSentAtIsNullOrderByScheduledAtAsc(OffsetDateTime scheduledAt);
 }
+

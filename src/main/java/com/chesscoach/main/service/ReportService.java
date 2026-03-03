@@ -1,3 +1,4 @@
+// This file contains project logic for ReportService.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.report.ReportExportResponse;
@@ -9,3 +10,4 @@ public interface ReportService {
 
     ReportImportResponse importTrainees(MultipartFile file);
 }
+

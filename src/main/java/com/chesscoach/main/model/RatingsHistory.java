@@ -1,3 +1,4 @@
+// This file contains project logic for RatingsHistory.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
@@ -101,3 +102,4 @@ public class RatingsHistory extends AuditableEntity {
         this.notes = notes;
     }
 }
+

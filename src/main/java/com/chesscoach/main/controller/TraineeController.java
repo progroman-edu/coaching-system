@@ -1,3 +1,4 @@
+// This file contains project logic for TraineeController.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;
@@ -103,3 +104,4 @@ public class TraineeController {
         return ResponseEntity.ok(ApiResponse.ok("Trainee deleted: " + id, null, request.getRequestURI()));
     }
 }
+
