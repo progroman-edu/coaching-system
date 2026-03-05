@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS trainees (
     highest_rating INT,
     ranking INT,
     photo_path VARCHAR(255),
+    chess_username VARCHAR(80),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_trainee_coach FOREIGN KEY (coach_id) REFERENCES coaches (id)
@@ -29,6 +30,7 @@ CREATE INDEX idx_trainee_name ON trainees(name);
 CREATE INDEX idx_trainee_current_rating ON trainees(current_rating);
 CREATE INDEX idx_trainee_age ON trainees(age);
 CREATE INDEX idx_trainee_course_strand ON trainees(course_strand);
+CREATE INDEX idx_trainee_chess_username ON trainees(chess_username);
 
 CREATE TABLE IF NOT EXISTS attendance (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

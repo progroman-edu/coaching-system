@@ -135,7 +135,7 @@ public class ReportServiceImpl implements ReportService {
 
     private List<String> exportTraineesCsv() {
         List<String> lines = new ArrayList<>();
-        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,highestRating,ranking,photoPath");
+        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,highestRating,ranking,photoPath,chessUsername");
         for (Trainee t : traineeRepository.findAll()) {
             lines.add(String.join(",",
                 safeCsv(t.getId()),
@@ -147,7 +147,8 @@ public class ReportServiceImpl implements ReportService {
                 safeCsv(t.getCurrentRating()),
                 safeCsv(t.getHighestRating()),
                 safeCsv(t.getRanking()),
-                safeCsv(t.getPhotoPath())
+                safeCsv(t.getPhotoPath()),
+                safeCsv(t.getChessUsername())
             ));
         }
         return lines;
@@ -206,6 +207,7 @@ public class ReportServiceImpl implements ReportService {
         Integer highestRating = raw.length > 6 ? parseInt(raw[6], false) : null;
         Integer ranking = raw.length > 7 ? parseInt(raw[7], false) : null;
         String photoPath = raw.length > 8 ? clean(raw[8]) : null;
+        String chessUsername = raw.length > 9 ? clean(raw[9]) : null;
 
         if (name.isBlank() || address.isBlank() || gradeLevel.isBlank() || courseStrand.isBlank()) {
             throw new IllegalArgumentException("Missing required trainee values");
@@ -223,6 +225,7 @@ public class ReportServiceImpl implements ReportService {
         trainee.setHighestRating(highestRating != null ? highestRating : currentRating);
         trainee.setRanking(ranking);
         trainee.setPhotoPath(photoPath);
+        trainee.setChessUsername(chessUsername);
         traineeRepository.save(trainee);
     }
 

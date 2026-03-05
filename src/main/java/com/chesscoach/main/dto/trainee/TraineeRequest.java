@@ -30,18 +30,13 @@ public class TraineeRequest {
     @Size(max = 100)
     private String courseStrand;
 
-    @NotNull
-    @Min(100)
-    @Max(3500)
-    private Integer currentRating;
-
-    @Min(100)
-    @Max(3500)
-    private Integer highestRating;
-
     private Integer ranking;
 
     private String photoPath;
+
+    @NotBlank
+    @Size(max = 80)
+    private String chessUsername;
 
     public String getName() {
         return name;
@@ -83,22 +78,6 @@ public class TraineeRequest {
         this.courseStrand = courseStrand;
     }
 
-    public Integer getCurrentRating() {
-        return currentRating;
-    }
-
-    public void setCurrentRating(Integer currentRating) {
-        this.currentRating = currentRating;
-    }
-
-    public Integer getHighestRating() {
-        return highestRating;
-    }
-
-    public void setHighestRating(Integer highestRating) {
-        this.highestRating = highestRating;
-    }
-
     public Integer getRanking() {
         return ranking;
     }
@@ -113,6 +92,14 @@ public class TraineeRequest {
 
     public void setPhotoPath(String photoPath) {
         this.photoPath = photoPath;
+    }
+
+    public String getChessUsername() {
+        return chessUsername;
+    }
+
+    public void setChessUsername(String chessUsername) {
+        this.chessUsername = chessUsername;
     }
 }
 

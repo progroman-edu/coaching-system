@@ -12,6 +12,7 @@ public class TraineeResponse {
     private Integer highestRating;
     private Integer ranking;
     private String photoPath;
+    private String chessUsername;
 
     public Long getId() {
         return id;
@@ -91,6 +92,14 @@ public class TraineeResponse {
 
     public void setPhotoPath(String photoPath) {
         this.photoPath = photoPath;
+    }
+
+    public String getChessUsername() {
+        return chessUsername;
+    }
+
+    public void setChessUsername(String chessUsername) {
+        this.chessUsername = chessUsername;
     }
 }
 

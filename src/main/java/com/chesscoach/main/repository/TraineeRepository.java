@@ -34,5 +34,7 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
     Optional<Trainee> findByNameIgnoreCaseAndCoachId(String name, Long coachId);
 
     List<Trainee> findAllByOrderByCurrentRatingDescIdAsc();
+
+    Optional<Trainee> findByChessUsernameIgnoreCase(String chessUsername);
 }
 

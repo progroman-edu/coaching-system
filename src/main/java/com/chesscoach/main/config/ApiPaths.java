@@ -9,6 +9,7 @@ public final class ApiPaths {
     public static final String MATCHES = BASE + "/matches";
     public static final String ANALYTICS = BASE + "/analytics";
     public static final String REPORTS = BASE + "/reports";
+    public static final String CHESSCOM = BASE + "/chesscom";
 
     private ApiPaths() {
     }

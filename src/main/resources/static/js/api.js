@@ -21,6 +21,14 @@ export const api = {
     getDashboard: () => request("/analytics/dashboard"),
     getPerformance: (traineeId) => request(`/analytics/performance/${traineeId}`),
     getRatingTrend: (traineeId) => request(`/analytics/rating-trend/${traineeId}`),
+    getChessComRatings: (username) => request(`/chesscom/${encodeURIComponent(username)}/rating`),
+    getChessComArchives: (username) => request(`/chesscom/${encodeURIComponent(username)}/match-history/archives`),
+    getChessComMonthlyGames: (username, year, month) =>
+        request(`/chesscom/${encodeURIComponent(username)}/match-history/${year}/${month}`),
+    getChessComAllModeHistory: (username, limitArchives) =>
+        request(`/chesscom/${encodeURIComponent(username)}/match-history/all-modes${limitArchives ? `?limitArchives=${encodeURIComponent(limitArchives)}` : ""}`),
+    syncTraineeChessComRating: (traineeId, mode = "rapid") =>
+        request(`/chesscom/trainees/${traineeId}/sync-rating?mode=${encodeURIComponent(mode)}`, { method: "POST" }),
 
     listTrainees: (params = {}) => {
         const query = new URLSearchParams(params);

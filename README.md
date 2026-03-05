@@ -612,3 +612,34 @@ Core service logic is implemented. Some advanced behaviors (fine-grained matchma
 5. Add charting/visual analytics rendering for trend data.
 6. Add optional AI and chess-engine integrations in later planned steps.
 7. Improve UI/UX
+
+## Chess.com PubAPI Integration (Ready)
+
+### What Was Added
+
+- Backend integration service for Chess.com public endpoints.
+- Controller endpoints under `/api/chesscom`.
+- Trainee support for `chessUsername`.
+- Rating sync endpoint to update trainee rating from Chess.com.
+
+### Config
+
+Set in `src/main/resources/application.properties`:
+
+- `app.chesscom.base-url` (default: `https://api.chess.com/pub`)
+- `app.chesscom.user-agent`
+- `app.chesscom.timeout-seconds`
+
+### Endpoints
+
+- `GET /api/chesscom/{username}/rating`
+- `GET /api/chesscom/{username}/match-history/archives`
+- `GET /api/chesscom/{username}/match-history/{year}/{month}`
+- `GET /api/chesscom/{username}/match-history/all-modes?limitArchives=24`
+- `POST /api/chesscom/trainees/{traineeId}/sync-rating?mode=rapid|blitz|bullet`
+
+### Notes
+
+- PubAPI is read-only.
+- The sync endpoint stores a `ratings_history` entry and updates trainee current/highest rating.
+- Supported sync modes: `rapid`, `blitz`, `bullet`, `puzzles`, `puzzle_rush`.

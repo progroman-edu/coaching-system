@@ -24,7 +24,8 @@ import java.util.List;
         @Index(name = "idx_trainee_name", columnList = "name"),
         @Index(name = "idx_trainee_current_rating", columnList = "current_rating"),
         @Index(name = "idx_trainee_age", columnList = "age"),
-        @Index(name = "idx_trainee_course_strand", columnList = "course_strand")
+        @Index(name = "idx_trainee_course_strand", columnList = "course_strand"),
+        @Index(name = "idx_trainee_chess_username", columnList = "chess_username")
     }
 )
 public class Trainee extends AuditableEntity {
@@ -63,6 +64,9 @@ public class Trainee extends AuditableEntity {
 
     @Column(name = "photo_path", length = 255)
     private String photoPath;
+
+    @Column(name = "chess_username", length = 80)
+    private String chessUsername;
 
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Attendance> attendanceRecords = new ArrayList<>();
@@ -159,6 +163,14 @@ public class Trainee extends AuditableEntity {
 
     public void setPhotoPath(String photoPath) {
         this.photoPath = photoPath;
+    }
+
+    public String getChessUsername() {
+        return chessUsername;
+    }
+
+    public void setChessUsername(String chessUsername) {
+        this.chessUsername = chessUsername;
     }
 
     public List<Attendance> getAttendanceRecords() {

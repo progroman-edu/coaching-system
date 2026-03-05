@@ -11,14 +11,15 @@ const photoForm = document.getElementById("photoForm");
 async function loadTrainees(params = {}) {
     try {
         const data = await api.listTrainees(params);
-        const rows = data.map((t) => `
+        const rows = data.map((t, index) => `
             <tr>
-                <td>${t.id ?? ""}</td>
+                <td>${index + 1}</td>
                 <td>${t.name ?? ""}</td>
                 <td>${t.age ?? ""}</td>
                 <td>${t.courseStrand ?? ""}</td>
                 <td>${t.currentRating ?? ""}</td>
                 <td>${t.ranking ?? ""}</td>
+                <td>${t.chessUsername ?? ""}</td>
                 <td>${t.photoPath ?? ""}</td>
                 <td><button data-del="${t.id}" class="danger">Delete</button></td>
             </tr>
@@ -34,9 +35,6 @@ form?.addEventListener("submit", async (e) => {
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(form).entries());
     payload.age = Number(payload.age);
-    payload.currentRating = Number(payload.currentRating);
-    payload.highestRating = payload.highestRating ? Number(payload.highestRating) : null;
-    payload.ranking = payload.ranking ? Number(payload.ranking) : null;
     try {
         await api.createTrainee(payload);
         showMessage(msg, "Trainee created.");
