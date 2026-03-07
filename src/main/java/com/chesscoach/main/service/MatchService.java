@@ -1,4 +1,4 @@
-// This file contains project logic for MatchService.
+// This service interface defines operations for Match workflows.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.match.MatchCreateRequest;

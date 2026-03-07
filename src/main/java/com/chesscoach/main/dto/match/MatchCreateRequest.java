@@ -1,4 +1,4 @@
-// This file contains project logic for MatchCreateRequest.
+// This DTO defines request payload fields for MatchCreate operations.
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotEmpty;

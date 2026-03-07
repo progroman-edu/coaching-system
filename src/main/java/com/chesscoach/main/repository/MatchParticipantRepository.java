@@ -1,4 +1,4 @@
-// This file contains project logic for MatchParticipantRepository.
+// This repository provides database access methods for MatchParticipant records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.MatchParticipant;

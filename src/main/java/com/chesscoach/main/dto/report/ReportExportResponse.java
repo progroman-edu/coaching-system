@@ -1,4 +1,4 @@
-// This file contains project logic for ReportExportResponse.
+// This DTO defines response payload fields for ReportExport endpoints.
 package com.chesscoach.main.dto.report;
 
 public class ReportExportResponse {

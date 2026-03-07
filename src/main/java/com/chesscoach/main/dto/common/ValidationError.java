@@ -1,4 +1,4 @@
-// This file contains project logic for ValidationError.
+// This DTO defines a shared API data contract for ValidationError.
 package com.chesscoach.main.dto.common;
 
 public class ValidationError {

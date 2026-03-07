@@ -1,4 +1,4 @@
-// This file contains project logic for AttendanceReportResponse.
+// This DTO defines response payload fields for AttendanceReport endpoints.
 package com.chesscoach.main.dto.attendance;
 
 import java.time.LocalDate;

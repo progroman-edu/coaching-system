@@ -1,4 +1,4 @@
-// This file contains project logic for Attendance.
+// This JPA entity maps domain data for Attendance.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;

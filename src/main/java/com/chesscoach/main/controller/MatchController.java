@@ -1,4 +1,4 @@
-// This file contains project logic for MatchController.
+// This controller exposes HTTP endpoints for Match workflows.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;

@@ -1,4 +1,4 @@
-// This file contains project logic for AttendanceRepository.
+// This repository provides database access methods for Attendance records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Attendance;

@@ -1,4 +1,4 @@
-// This file contains project logic for ImageStorageService.
+// This service interface defines operations for ImageStorage workflows.
 package com.chesscoach.main.service;
 
 import org.springframework.web.multipart.MultipartFile;

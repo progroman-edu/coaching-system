@@ -1,4 +1,4 @@
-// This file contains project logic for AnalyticsController.
+// This controller exposes HTTP endpoints for Analytics workflows.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;

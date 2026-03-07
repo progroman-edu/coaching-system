@@ -1,4 +1,4 @@
-// This file contains project logic for ApiError.
+// This DTO defines a shared API data contract for ApiError.
 package com.chesscoach.main.dto.common;
 
 public class ApiError {

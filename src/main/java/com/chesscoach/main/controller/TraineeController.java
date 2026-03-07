@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeController.
+// This controller exposes HTTP endpoints for Trainee workflows.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;

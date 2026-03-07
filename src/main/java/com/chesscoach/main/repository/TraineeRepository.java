@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeRepository.
+// This repository provides database access methods for Trainee records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Trainee;

@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeRequest.
+// This DTO defines request payload fields for Trainee operations.
 package com.chesscoach.main.dto.trainee;
 
 import jakarta.validation.constraints.Max;

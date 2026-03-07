@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeService.
+// This service interface defines operations for Trainee workflows.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.trainee.TraineeRequest;

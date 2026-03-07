@@ -1,4 +1,4 @@
-// This file contains project logic for MatchResultRepository.
+// This repository provides database access methods for MatchResult records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.MatchResult;

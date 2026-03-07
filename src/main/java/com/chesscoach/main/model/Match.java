@@ -1,4 +1,4 @@
-// This file contains project logic for Match.
+// This JPA entity maps domain data for Match.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.CascadeType;

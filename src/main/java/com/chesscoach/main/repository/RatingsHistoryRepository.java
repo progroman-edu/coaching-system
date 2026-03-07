@@ -1,4 +1,4 @@
-// This file contains project logic for RatingsHistoryRepository.
+// This repository provides database access methods for RatingsHistory records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.RatingsHistory;

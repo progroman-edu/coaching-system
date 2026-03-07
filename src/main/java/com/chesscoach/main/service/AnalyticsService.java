@@ -1,4 +1,4 @@
-// This file contains project logic for AnalyticsService.
+// This service interface defines operations for Analytics workflows.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;

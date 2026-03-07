@@ -1,4 +1,4 @@
-// This file contains project logic for MatchFormat.
+// This enum constrains allowed values for MatchFormat.
 package com.chesscoach.main.model;
 
 public enum MatchFormat {

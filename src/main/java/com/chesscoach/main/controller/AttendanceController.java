@@ -1,4 +1,4 @@
-// This file contains project logic for AttendanceController.
+// This controller exposes HTTP endpoints for Attendance workflows.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;

@@ -1,4 +1,4 @@
-// This file contains project logic for AttendanceRecordRequest.
+// This DTO defines request payload fields for AttendanceRecord operations.
 package com.chesscoach.main.dto.attendance;
 
 import jakarta.validation.constraints.NotNull;

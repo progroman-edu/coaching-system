@@ -1,4 +1,4 @@
-// This file contains project logic for CoachRepository.
+// This repository provides database access methods for Coach records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Coach;

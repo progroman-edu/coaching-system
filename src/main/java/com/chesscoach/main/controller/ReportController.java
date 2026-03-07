@@ -1,4 +1,4 @@
-// This file contains project logic for ReportController.
+// This controller exposes HTTP endpoints for Report workflows.
 package com.chesscoach.main.controller;
 
 import com.chesscoach.main.config.ApiPaths;

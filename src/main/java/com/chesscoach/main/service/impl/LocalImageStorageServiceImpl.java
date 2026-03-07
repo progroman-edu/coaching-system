@@ -1,4 +1,4 @@
-// This file contains project logic for LocalImageStorageServiceImpl.
+// This service implementation contains business logic for LocalImageStorage operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.service.ImageStorageService;

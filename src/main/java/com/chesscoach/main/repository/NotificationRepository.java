@@ -1,4 +1,4 @@
-// This file contains project logic for NotificationRepository.
+// This repository provides database access methods for Notification records.
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.Notification;

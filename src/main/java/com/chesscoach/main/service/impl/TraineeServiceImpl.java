@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeServiceImpl.
+// This service implementation contains business logic for Trainee operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.trainee.TraineeRequest;

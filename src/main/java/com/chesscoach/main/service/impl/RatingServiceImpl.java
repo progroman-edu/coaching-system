@@ -1,4 +1,4 @@
-// This file contains project logic for RatingServiceImpl.
+// This service implementation contains business logic for Rating operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.model.MatchResult;

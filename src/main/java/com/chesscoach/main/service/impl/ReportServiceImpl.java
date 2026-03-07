@@ -1,4 +1,4 @@
-// This file contains project logic for ReportServiceImpl.
+// This service implementation contains business logic for Report operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.report.ReportExportResponse;

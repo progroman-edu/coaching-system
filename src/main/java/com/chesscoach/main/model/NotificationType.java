@@ -1,4 +1,4 @@
-// This file contains project logic for NotificationType.
+// This enum constrains allowed values for NotificationType.
 package com.chesscoach.main.model;
 
 public enum NotificationType {

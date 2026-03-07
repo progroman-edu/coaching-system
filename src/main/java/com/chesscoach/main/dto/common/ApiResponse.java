@@ -1,4 +1,4 @@
-// This file contains project logic for ApiResponse.
+// This DTO defines response payload fields for Api endpoints.
 package com.chesscoach.main.dto.common;
 
 import java.time.OffsetDateTime;

@@ -1,4 +1,4 @@
-// This file contains project logic for AttendanceServiceImpl.
+// This service implementation contains business logic for Attendance operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.attendance.AttendanceRecordRequest;

@@ -1,4 +1,4 @@
-// This file contains project logic for TraineeResponse.
+// This DTO defines response payload fields for Trainee endpoints.
 package com.chesscoach.main.dto.trainee;
 
 public class TraineeResponse {

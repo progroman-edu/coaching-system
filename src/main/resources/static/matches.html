@@ -29,7 +29,12 @@
             <form id="scheduleForm" class="grid cols-2">
                 <div><label>Scheduled Date</label><input type="date" name="scheduledDate" required></div>
                 <div><label>Format</label><select name="format"><option>SWISS</option><option>ROUND_ROBIN</option></select></div>
-                <div style="grid-column:1 / -1;"><label>Trainee IDs (comma-separated)</label><input name="traineeIds" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Participants</label>
+                    <div id="scheduleProfiles" class="participant-picker"></div>
+                    <div id="scheduleSelectedCount" class="participant-meta">Selected: 0</div>
+                    <input type="hidden" name="traineeIds">
+                </div>
                 <div style="grid-column:1 / -1;"><button type="submit">Create Match</button></div>
             </form>
         </section>
@@ -39,7 +44,12 @@
             <form id="pairForm" class="grid cols-2">
                 <div><label>Format</label><select name="format"><option>SWISS</option><option>ROUND_ROBIN</option></select></div>
                 <div><label>Round Number</label><input type="number" name="roundNumber" value="1" required></div>
-                <div style="grid-column:1 / -1;"><label>Trainee IDs (comma-separated)</label><input name="traineeIds" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Participants</label>
+                    <div id="pairProfiles" class="participant-picker"></div>
+                    <div id="pairSelectedCount" class="participant-meta">Selected: 0</div>
+                    <input type="hidden" name="traineeIds">
+                </div>
                 <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Generate</button></div>
             </form>
         </section>
@@ -47,7 +57,14 @@
         <section class="panel">
             <h3>Submit Result</h3>
             <form id="resultForm" class="grid cols-4">
-                <div><label>Match ID</label><input type="number" name="matchId" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Match</label>
+                    <select name="matchRef" required>
+                        <option value="">Select a loaded F2F match</option>
+                    </select>
+                    <!-- Real backend ID is set automatically from selected match reference. -->
+                    <input type="hidden" name="matchId" required>
+                </div>
                 <div><label>White Trainee ID</label><input type="number" name="whiteTraineeId" required></div>
                 <div><label>Black Trainee ID</label><input type="number" name="blackTraineeId" required></div>
                 <div><label>&nbsp;</label><span></span></div>
@@ -59,8 +76,37 @@
 
         <section class="panel">
             <h3>Match History by Trainee</h3>
-            <form id="historyForm" class="row">
-                <input type="number" name="traineeId" placeholder="Trainee ID" required>
+            <form id="historyForm" class="grid">
+                <div>
+                    <label>History Mode</label>
+                    <select name="historyMode">
+                        <option value="OFFLINE">Offline (F2F)</option>
+                        <option value="ONLINE">Online (Chess.com)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Start Date Filter</label>
+                    <input type="date" name="dateFilter">
+                </div>
+                <div>
+                    <label>Format Filter</label>
+                    <select name="formatFilter">
+                        <option value="ALL">All</option>
+                        <option value="SWISS">SWISS</option>
+                        <option value="ROUND_ROBIN">ROUND_ROBIN</option>
+                        <option value="RAPID">RAPID</option>
+                        <option value="BLITZ">BLITZ</option>
+                        <option value="BULLET">BULLET</option>
+                        <option value="DAILY">DAILY</option>
+                        <option value="OTHER">OTHER</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Select Trainee Profile</label>
+                    <div id="historyProfiles" class="participant-picker"></div>
+                    <div id="historySelectedLabel" class="participant-meta">Selected: none</div>
+                    <input type="hidden" name="traineeId" required>
+                </div>
                 <button class="secondary" type="submit">Load History</button>
             </form>
         </section>
@@ -69,11 +115,12 @@
             <table>
                 <thead>
                 <tr>
-                    <th>Match ID</th>
+                    <th>Match Ref</th>
                     <th>Date</th>
                     <th>Format</th>
                     <th>White</th>
                     <th>Black</th>
+                    <th>Opening</th>
                     <th>Result</th>
                 </tr>
                 </thead>
@@ -81,6 +128,12 @@
             </table>
         </section>
     </main>
+</div>
+<div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Loading...</span>
+    </div>
 </div>
 <script type="module" src="/js/matches.js"></script>
     <script src="/js/sidebar.js"></script>

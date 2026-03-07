@@ -1,4 +1,4 @@
-// This file contains project logic for MatchServiceImpl.
+// This service implementation contains business logic for Match operations.
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.match.MatchCreateRequest;

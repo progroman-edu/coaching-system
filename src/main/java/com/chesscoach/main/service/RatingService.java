@@ -1,4 +1,4 @@
-// This file contains project logic for RatingService.
+// This service interface defines operations for Rating workflows.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.model.MatchResult;

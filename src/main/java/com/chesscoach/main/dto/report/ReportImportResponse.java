@@ -1,4 +1,4 @@
-// This file contains project logic for ReportImportResponse.
+// This DTO defines response payload fields for ReportImport endpoints.
 package com.chesscoach.main.dto.report;
 
 public class ReportImportResponse {

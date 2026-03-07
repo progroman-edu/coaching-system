@@ -1,4 +1,4 @@
-// This file contains project logic for RatingTrendPointResponse.
+// This DTO defines response payload fields for RatingTrendPoint endpoints.
 package com.chesscoach.main.dto.analytics;
 
 import java.time.OffsetDateTime;

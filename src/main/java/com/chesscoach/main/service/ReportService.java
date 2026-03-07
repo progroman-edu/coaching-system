@@ -1,4 +1,4 @@
-// This file contains project logic for ReportService.
+// This service interface defines operations for Report workflows.
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.dto.report.ReportExportResponse;

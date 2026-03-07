@@ -1,4 +1,4 @@
-// This file contains project logic for Notification.
+// This JPA entity maps domain data for Notification.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;

@@ -1,4 +1,4 @@
-// This file contains project logic for DashboardAnalyticsResponse.
+// This DTO defines response payload fields for DashboardAnalytics endpoints.
 package com.chesscoach.main.dto.analytics;
 
 public class DashboardAnalyticsResponse {

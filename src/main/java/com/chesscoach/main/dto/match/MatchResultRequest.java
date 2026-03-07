@@ -1,4 +1,4 @@
-// This file contains project logic for MatchResultRequest.
+// This DTO defines request payload fields for MatchResult operations.
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotNull;

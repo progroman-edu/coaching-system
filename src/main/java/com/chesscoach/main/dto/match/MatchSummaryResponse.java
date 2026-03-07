@@ -1,4 +1,4 @@
-// This file contains project logic for MatchSummaryResponse.
+// This DTO defines response payload fields for MatchSummary endpoints.
 package com.chesscoach.main.dto.match;
 
 import java.time.LocalDate;

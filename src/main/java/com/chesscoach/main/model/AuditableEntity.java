@@ -1,4 +1,4 @@
-// This file contains project logic for AuditableEntity.
+// This JPA entity maps domain data for AuditableEntity.
 package com.chesscoach.main.model;
 
 import jakarta.persistence.Column;
