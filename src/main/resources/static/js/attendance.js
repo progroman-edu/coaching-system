@@ -1,6 +1,6 @@
 // This file powers attendance recording and report loading interactions.
 import { api } from "./api.js";
-import { fillTableBody, showMessage } from "./ui.js";
+import { escapeHtml, fillTableBody, showMessage } from "./ui.js";
 
 const msg = document.getElementById("msg");
 const recordForm = document.getElementById("attendanceForm");
@@ -28,11 +28,11 @@ reportForm?.addEventListener("submit", async (e) => {
         const data = await api.attendanceReport(payload.startDate, payload.endDate, payload.traineeId || undefined);
         const rows = data.map((r) => `
             <tr>
-                <td>${r.traineeId ?? ""}</td>
-                <td>${r.traineeName ?? ""}</td>
-                <td>${r.sessionsPresent ?? 0}</td>
-                <td>${r.totalSessions ?? 0}</td>
-                <td>${Number(r.attendancePercentage ?? 0).toFixed(2)}%</td>
+                <td>${escapeHtml(r.traineeId ?? "")}</td>
+                <td>${escapeHtml(r.traineeName ?? "")}</td>
+                <td>${escapeHtml(r.sessionsPresent ?? 0)}</td>
+                <td>${escapeHtml(r.totalSessions ?? 0)}</td>
+                <td>${escapeHtml(Number(r.attendancePercentage ?? 0).toFixed(2))}%</td>
             </tr>
         `).join("");
         fillTableBody(tbody, rows);

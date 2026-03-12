@@ -56,6 +56,9 @@ public class Trainee extends AuditableEntity {
     @Column(name = "current_rating", nullable = false)
     private Integer currentRating;
 
+    @Column(name = "current_rating_mode", length = 10)
+    private String currentRatingMode;
+
     @Column(name = "highest_rating")
     private Integer highestRating;
 
@@ -139,6 +142,14 @@ public class Trainee extends AuditableEntity {
 
     public void setCurrentRating(Integer currentRating) {
         this.currentRating = currentRating;
+    }
+
+    public String getCurrentRatingMode() {
+        return currentRatingMode;
+    }
+
+    public void setCurrentRatingMode(String currentRatingMode) {
+        this.currentRatingMode = currentRatingMode;
     }
 
     public Integer getHighestRating() {

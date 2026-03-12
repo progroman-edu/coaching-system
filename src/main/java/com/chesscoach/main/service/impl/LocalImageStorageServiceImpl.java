@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +39,14 @@ public class LocalImageStorageServiceImpl implements ImageStorageService {
             throw new IllegalArgumentException("Unsupported image format. Allowed: jpg, jpeg, png, webp");
         }
 
+        String detectedType = detectImageType(file);
+        if (detectedType == null) {
+            throw new IllegalArgumentException("File signature does not match a supported image type");
+        }
+        if (!matchesExtension(extension, detectedType)) {
+            throw new IllegalArgumentException("File extension does not match image content");
+        }
+
         String contentType = file.getContentType();
         if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
             throw new IllegalArgumentException("Uploaded file must be an image");
@@ -63,6 +72,50 @@ public class LocalImageStorageServiceImpl implements ImageStorageService {
             return "";
         }
         return filename.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private String detectImageType(MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            byte[] header = is.readNBytes(12);
+            if (header.length >= 3
+                && (header[0] & 0xFF) == 0xFF
+                && (header[1] & 0xFF) == 0xD8
+                && (header[2] & 0xFF) == 0xFF) {
+                return "jpeg";
+            }
+            if (header.length >= 8
+                && (header[0] & 0xFF) == 0x89
+                && header[1] == 0x50
+                && header[2] == 0x4E
+                && header[3] == 0x47
+                && header[4] == 0x0D
+                && header[5] == 0x0A
+                && header[6] == 0x1A
+                && header[7] == 0x0A) {
+                return "png";
+            }
+            if (header.length >= 12
+                && header[0] == 0x52
+                && header[1] == 0x49
+                && header[2] == 0x46
+                && header[3] == 0x46
+                && header[8] == 0x57
+                && header[9] == 0x45
+                && header[10] == 0x42
+                && header[11] == 0x50) {
+                return "webp";
+            }
+            return null;
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to inspect uploaded image: " + ex.getMessage(), ex);
+        }
+    }
+
+    private boolean matchesExtension(String extension, String detectedType) {
+        if ("jpeg".equals(detectedType)) {
+            return "jpg".equals(extension) || "jpeg".equals(extension);
+        }
+        return extension.equals(detectedType);
     }
 }
 

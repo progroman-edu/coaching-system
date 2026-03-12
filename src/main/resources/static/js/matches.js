@@ -1,6 +1,6 @@
 // This file powers match creation, pairing generation, and result submission interactions.
 import { api } from "./api.js";
-import { clearMessage, fillTableBody, showMessage } from "./ui.js";
+import { clearMessage, escapeHtml, fillTableBody, showMessage } from "./ui.js";
 
 const msg = document.getElementById("msg");
 const scheduleForm = document.getElementById("scheduleForm");
@@ -27,15 +27,6 @@ function parseIds(idsText) {
         .split(",")
         .map((x) => Number(x.trim()))
         .filter((x) => Number.isFinite(x));
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll("\"", "&quot;")
-        .replaceAll("'", "&#39;");
 }
 
 function initialsOf(name) {
@@ -272,6 +263,15 @@ function onlineOutcome(playerResult) {
     return "Loss";
 }
 
+function safeHttpUrl(value) {
+    try {
+        const url = new URL(String(value ?? ""), window.location.origin);
+        return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+    } catch {
+        return "";
+    }
+}
+
 function renderOnlineMatches(data, username, filters = {}) {
     // Online/Chess.com history table rendering.
     const groupedGames = data?.groupedGames ?? {};
@@ -295,7 +295,8 @@ function renderOnlineMatches(data, username, filters = {}) {
         const blackResult = g?.black?.result ?? "";
         const playerIsWhite = String(whiteUser).toLowerCase() === normalizedUsername;
         const playerResult = playerIsWhite ? whiteResult : blackResult;
-        const detailsLink = g?.url ? `<a href="${escapeHtml(g.url)}" target="_blank" rel="noopener">View</a>` : "";
+        const detailsUrl = safeHttpUrl(g?.url);
+        const detailsLink = detailsUrl ? `<a href="${escapeHtml(detailsUrl)}" target="_blank" rel="noopener">View</a>` : "";
         const ecoText = String(g?.eco ?? "").trim();
         // Chess.com ECO URL tail is used as opening name when available.
         const opening = ecoText
@@ -361,14 +362,25 @@ pairForm?.addEventListener("submit", async (e) => {
 });
 
 resultForm?.addEventListener("submit", async (e) => {
-    // Submit result to backend using hidden matchId resolved from selected match ref.
+    // Submit result using selected match + outcome; backend resolves match participants.
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(resultForm).entries());
     payload.matchId = Number(payload.matchId);
-    payload.whiteTraineeId = Number(payload.whiteTraineeId);
-    payload.blackTraineeId = Number(payload.blackTraineeId);
-    payload.whiteScore = Number(payload.whiteScore);
-    payload.blackScore = Number(payload.blackScore);
+    const resultType = String(payload.resultType ?? "");
+    if (resultType === "WHITE_WIN") {
+        payload.whiteScore = 1.0;
+        payload.blackScore = 0.0;
+    } else if (resultType === "BLACK_WIN") {
+        payload.whiteScore = 0.0;
+        payload.blackScore = 1.0;
+    } else if (resultType === "DRAW") {
+        payload.whiteScore = 0.5;
+        payload.blackScore = 0.5;
+    } else {
+        showMessage(msg, "Select a valid result.", false);
+        return;
+    }
+    delete payload.resultType;
     if (!Number.isFinite(payload.matchId) || payload.matchId <= 0) {
         showMessage(msg, "Select a valid loaded F2F match first.", false);
         return;
@@ -417,15 +429,11 @@ historyForm?.addEventListener("submit", async (e) => {
 });
 
 resultMatchSelect?.addEventListener("change", () => {
-    // On match ref selection, hydrate hidden matchId + player IDs for result submission.
+    // On match ref selection, hydrate hidden matchId for result submission.
     const key = String(resultMatchSelect.value ?? "");
     const match = offlineMatchesByRef.get(key)?.match;
     const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
-    const whiteInput = resultForm?.querySelector('input[name="whiteTraineeId"]');
-    const blackInput = resultForm?.querySelector('input[name="blackTraineeId"]');
     if (hiddenIdInput) hiddenIdInput.value = match?.matchId ? String(match.matchId) : "";
-    if (whiteInput) whiteInput.value = match?.whiteTraineeId ? String(match.whiteTraineeId) : "";
-    if (blackInput) blackInput.value = match?.blackTraineeId ? String(match.blackTraineeId) : "";
 });
 
 bindParticipantPicker(scheduleProfiles, scheduleForm, scheduleSelectedIds, scheduleSelectedCount);

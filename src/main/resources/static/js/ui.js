@@ -17,3 +17,12 @@ export function fillTableBody(tbody, rowsHtml) {
     tbody.innerHTML = rowsHtml || "<tr><td colspan='20'>No data</td></tr>";
 }
 
+export function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+}
+

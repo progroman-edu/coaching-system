@@ -50,6 +50,7 @@ public class TraineeController {
         @RequestParam(required = false) Integer ageMin,
         @RequestParam(required = false) Integer ageMax,
         @RequestParam(required = false) String courseStrand,
+        @RequestParam(defaultValue = "asc") String rankingOrder,
         @RequestParam(defaultValue = "0") Integer page,
         @RequestParam(defaultValue = "20") Integer size,
         HttpServletRequest request
@@ -60,6 +61,7 @@ public class TraineeController {
             ageMin,
             ageMax,
             courseStrand,
+            rankingOrder,
             page,
             size
         );
@@ -102,6 +104,18 @@ public class TraineeController {
     ) {
         traineeService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok("Trainee deleted: " + id, null, request.getRequestURI()));
+    }
+
+    @DeleteMapping("/reset-test-data")
+    public ResponseEntity<ApiResponse<Void>> resetTestData(
+        @RequestParam(defaultValue = "false") boolean confirm,
+        HttpServletRequest request
+    ) {
+        if (!confirm) {
+            throw new IllegalArgumentException("Set confirm=true to reset trainee test data");
+        }
+        traineeService.resetTraineeTestData();
+        return ResponseEntity.ok(ApiResponse.ok("Trainee test data reset complete", null, request.getRequestURI()));
     }
 }
 

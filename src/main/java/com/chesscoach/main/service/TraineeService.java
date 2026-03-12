@@ -16,6 +16,7 @@ public interface TraineeService {
         Integer ageMin,
         Integer ageMax,
         String courseStrand,
+        String rankingOrder,
         Integer page,
         Integer size
     );
@@ -27,5 +28,7 @@ public interface TraineeService {
     TraineeResponse updatePhoto(Long id, MultipartFile file);
 
     void delete(Long id);
+
+    void resetTraineeTestData();
 }
 

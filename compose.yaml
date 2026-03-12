@@ -5,9 +5,9 @@ services:
     container_name: chesscoach-mysql
     environment:
       MYSQL_DATABASE: chess_coach_db
-      MYSQL_USER: chesscoach
-      MYSQL_PASSWORD: chesscoach
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ${MYSQL_USER:-chesscoach}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -24,9 +24,10 @@ services:
       dockerfile: Dockerfile
     container_name: chesscoach-app
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/chess_coach_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: chesscoach
-      DB_PASSWORD: chesscoach
+      APP_DB_URL: jdbc:mysql://mysql:3306/chess_coach_db?serverTimezone=UTC
+      APP_DB_USERNAME: ${MYSQL_USER:-chesscoach}
+      APP_DB_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       APP_UPLOAD_BASE_DIR: /app/uploads
       APP_REPORT_EXPORT_DIR: /app/uploads/reports
     ports:

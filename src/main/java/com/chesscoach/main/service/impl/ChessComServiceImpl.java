@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -148,20 +149,30 @@ public class ChessComServiceImpl implements ChessComService {
         }
 
         ChessComRatingResponse ratings = getRatings(trainee.getChessUsername());
-        Integer target = switch (normalizedMode) {
-            case "rapid" -> ratings.getRapid();
-            case "blitz" -> ratings.getBlitz();
-            case "bullet" -> ratings.getBullet();
-            default -> null;
-        };
+        String resolvedMode = normalizedMode;
+        Integer target = resolveRatingByMode(ratings, normalizedMode);
         if (target == null) {
-            throw new IllegalStateException("No " + normalizedMode + " rating found for user " + trainee.getChessUsername());
+            for (String fallback : List.of("rapid", "blitz", "bullet")) {
+                if (fallback.equals(normalizedMode)) {
+                    continue;
+                }
+                target = resolveRatingByMode(ratings, fallback);
+                if (target != null) {
+                    resolvedMode = fallback;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            throw new IllegalStateException("No rapid/blitz/bullet rating found for user " + trainee.getChessUsername());
         }
 
-        int oldRating = trainee.getCurrentRating();
+        int oldRating = trainee.getCurrentRating() != null ? trainee.getCurrentRating() : target;
         trainee.setCurrentRating(target);
         trainee.setHighestRating(Math.max(target, trainee.getHighestRating() == null ? target : trainee.getHighestRating()));
+        trainee.setCurrentRatingMode(resolvedMode);
         traineeRepository.save(trainee);
+        recomputeRankings();
 
         RatingsHistory history = new RatingsHistory();
         history.setTrainee(trainee);
@@ -169,16 +180,25 @@ public class ChessComServiceImpl implements ChessComService {
         history.setOldRating(oldRating);
         history.setNewRating(target);
         history.setRatingChange(target - oldRating);
-        history.setNotes("Synced from Chess.com " + normalizedMode + " rating");
+        history.setNotes("Synced from Chess.com " + resolvedMode + " rating");
         ratingsHistoryRepository.save(history);
 
         ChessComSyncRatingResponse response = new ChessComSyncRatingResponse();
         response.setTraineeId(traineeId);
         response.setChessUsername(trainee.getChessUsername());
-        response.setMode(normalizedMode);
+        response.setMode(resolvedMode);
         response.setOldRating(oldRating);
         response.setNewRating(target);
         return response;
+    }
+
+    private void recomputeRankings() {
+        List<Trainee> leaderboard = traineeRepository.findAllByOrderByCurrentRatingDescIdAsc();
+        int rank = 1;
+        for (Trainee trainee : leaderboard) {
+            trainee.setRanking(rank++);
+        }
+        traineeRepository.saveAll(leaderboard);
     }
 
     private JsonNode fetchJson(String path) {
@@ -227,6 +247,15 @@ public class ChessComServiceImpl implements ChessComService {
             throw new IllegalArgumentException("Unsupported mode: " + mode + " (allowed: rapid, blitz, bullet)");
         }
         return value;
+    }
+
+    private static Integer resolveRatingByMode(ChessComRatingResponse ratings, String mode) {
+        return switch (mode) {
+            case "rapid" -> ratings.getRapid();
+            case "blitz" -> ratings.getBlitz();
+            case "bullet" -> ratings.getBullet();
+            default -> null;
+        };
     }
 
     private static String encode(String value) {

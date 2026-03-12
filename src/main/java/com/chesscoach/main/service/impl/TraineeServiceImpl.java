@@ -7,12 +7,23 @@ import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
 import com.chesscoach.main.exception.ResourceNotFoundException;
 import com.chesscoach.main.model.Coach;
 import com.chesscoach.main.model.Trainee;
+import com.chesscoach.main.repository.AttendanceRepository;
 import com.chesscoach.main.repository.CoachRepository;
+import com.chesscoach.main.repository.MatchParticipantRepository;
+import com.chesscoach.main.repository.MatchRepository;
+import com.chesscoach.main.repository.MatchResultRepository;
+import com.chesscoach.main.repository.NotificationRepository;
+import com.chesscoach.main.repository.RatingsHistoryRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.ChessComService;
 import com.chesscoach.main.service.ImageStorageService;
 import com.chesscoach.main.service.TraineeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,22 +34,47 @@ import java.util.List;
 public class TraineeServiceImpl implements TraineeService {
 
     private static final String DEFAULT_COACH_EMAIL = "coach@local";
+    private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     private final TraineeRepository traineeRepository;
     private final CoachRepository coachRepository;
     private final ImageStorageService imageStorageService;
     private final ChessComService chessComService;
+    private final AttendanceRepository attendanceRepository;
+    private final MatchResultRepository matchResultRepository;
+    private final MatchParticipantRepository matchParticipantRepository;
+    private final MatchRepository matchRepository;
+    private final RatingsHistoryRepository ratingsHistoryRepository;
+    private final NotificationRepository notificationRepository;
+    private final JdbcTemplate jdbcTemplate;
+
+    @Value("${app.rating.default:1200}")
+    private int defaultRating;
 
     public TraineeServiceImpl(
         TraineeRepository traineeRepository,
         CoachRepository coachRepository,
         ImageStorageService imageStorageService,
-        ChessComService chessComService
+        ChessComService chessComService,
+        AttendanceRepository attendanceRepository,
+        MatchResultRepository matchResultRepository,
+        MatchParticipantRepository matchParticipantRepository,
+        MatchRepository matchRepository,
+        RatingsHistoryRepository ratingsHistoryRepository,
+        NotificationRepository notificationRepository,
+        JdbcTemplate jdbcTemplate
     ) {
         this.traineeRepository = traineeRepository;
         this.coachRepository = coachRepository;
         this.imageStorageService = imageStorageService;
         this.chessComService = chessComService;
+        this.attendanceRepository = attendanceRepository;
+        this.matchResultRepository = matchResultRepository;
+        this.matchParticipantRepository = matchParticipantRepository;
+        this.matchRepository = matchRepository;
+        this.ratingsHistoryRepository = ratingsHistoryRepository;
+        this.notificationRepository = notificationRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -61,16 +97,18 @@ public class TraineeServiceImpl implements TraineeService {
         Integer ageMin,
         Integer ageMax,
         String courseStrand,
+        String rankingOrder,
         Integer page,
         Integer size
     ) {
+        Sort sort = resolveRankingSort(rankingOrder);
         return traineeRepository.search(
             ratingMin,
             ratingMax,
             ageMin,
             ageMax,
             courseStrand,
-            PageRequest.of(page, size)
+            PageRequest.of(page, size, sort)
         ).map(this::toResponse).toList();
     }
 
@@ -105,6 +143,20 @@ public class TraineeServiceImpl implements TraineeService {
         }
         traineeRepository.deleteById(id);
         recomputeRankings();
+        resetAutoIncrementIfNoTrainees();
+    }
+
+    @Override
+    @Transactional
+    public void resetTraineeTestData() {
+        ratingsHistoryRepository.deleteAllInBatch();
+        notificationRepository.deleteAllInBatch();
+        attendanceRepository.deleteAllInBatch();
+        matchResultRepository.deleteAllInBatch();
+        matchParticipantRepository.deleteAllInBatch();
+        matchRepository.deleteAllInBatch();
+        traineeRepository.deleteAllInBatch();
+        resetAutoIncrementIfNoTrainees();
     }
 
     private Trainee getTraineeOrThrow(Long id) {
@@ -130,23 +182,54 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setGradeLevel(request.getGradeLevel());
         trainee.setCourseStrand(request.getCourseStrand());
         trainee.setPhotoPath(request.getPhotoPath());
-        trainee.setChessUsername(request.getChessUsername());
+        trainee.setChessUsername(normalizeUsername(request.getChessUsername()));
     }
 
     private void applyRatingsFromChessCom(Trainee trainee, String chessUsername) {
-        ChessComRatingResponse ratings = chessComService.getRatings(chessUsername);
+        String normalizedUsername = normalizeUsername(chessUsername);
+        if (normalizedUsername == null) {
+            trainee.setCurrentRating(defaultRating);
+            trainee.setHighestRating(defaultRating);
+            trainee.setCurrentRatingMode("default");
+            return;
+        }
+
+        ChessComRatingResponse ratings = chessComService.getRatings(normalizedUsername);
         Integer current = ratings.getRapid();
+        String mode = "rapid";
         if (current == null) {
             current = ratings.getBlitz();
+            mode = "blitz";
         }
         if (current == null) {
             current = ratings.getBullet();
+            mode = "bullet";
         }
         if (current == null) {
-            throw new IllegalStateException("No rapid/blitz/bullet rating found for Chess.com user: " + chessUsername);
+            log.warn("No rapid/blitz/bullet rating for Chess.com user {}; using default {}", normalizedUsername, defaultRating);
+            current = defaultRating;
+            mode = "default";
         }
         trainee.setCurrentRating(current);
         trainee.setHighestRating(current);
+        trainee.setCurrentRatingMode(mode);
+    }
+
+    private static String normalizeUsername(String username) {
+        if (username == null) {
+            return null;
+        }
+        String normalized = username.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static Sort resolveRankingSort(String rankingOrder) {
+        String normalized = rankingOrder == null ? "asc" : rankingOrder.trim().toLowerCase();
+        return switch (normalized) {
+            case "desc" -> Sort.by(Sort.Order.desc("ranking"), Sort.Order.asc("id"));
+            case "asc", "" -> Sort.by(Sort.Order.asc("ranking"), Sort.Order.asc("id"));
+            default -> throw new IllegalArgumentException("rankingOrder must be 'asc' or 'desc'");
+        };
     }
 
     private void recomputeRankings() {
@@ -158,6 +241,17 @@ public class TraineeServiceImpl implements TraineeService {
         traineeRepository.saveAll(leaderboard);
     }
 
+    private void resetAutoIncrementIfNoTrainees() {
+        if (traineeRepository.count() > 0) {
+            return;
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE trainees AUTO_INCREMENT = 1");
+        } catch (Exception ex) {
+            log.debug("Could not reset trainees AUTO_INCREMENT on current database engine: {}", ex.getMessage());
+        }
+    }
+
     private TraineeResponse toResponse(Trainee trainee) {
         TraineeResponse response = new TraineeResponse();
         response.setId(trainee.getId());
@@ -167,6 +261,7 @@ public class TraineeServiceImpl implements TraineeService {
         response.setGradeLevel(trainee.getGradeLevel());
         response.setCourseStrand(trainee.getCourseStrand());
         response.setCurrentRating(trainee.getCurrentRating());
+        response.setCurrentRatingMode(trainee.getCurrentRatingMode());
         response.setHighestRating(trainee.getHighestRating());
         response.setRanking(trainee.getRanking());
         response.setPhotoPath(trainee.getPhotoPath());

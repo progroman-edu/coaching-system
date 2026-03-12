@@ -3,6 +3,8 @@ package com.chesscoach.main.exception;
 
 import com.chesscoach.main.dto.common.ApiError;
 import com.chesscoach.main.dto.common.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,12 +13,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -49,14 +54,30 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({MaxUploadSizeExceededException.class, MultipartException.class})
     public ResponseEntity<ApiResponse<Void>> handleMultipart(Exception ex, HttpServletRequest request) {
-        List<ApiError> errors = List.of(new ApiError("UPLOAD_ERROR", ex.getMessage()));
+        log.warn("Invalid upload at {}: {}", request.getRequestURI(), ex.getMessage());
+        List<ApiError> errors = List.of(new ApiError("UPLOAD_ERROR", "Invalid upload payload"));
         ApiResponse<Void> response = ApiResponse.fail("Invalid file upload", errors, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadRequest(IllegalArgumentException ex, HttpServletRequest request) {
+        List<ApiError> errors = List.of(new ApiError("BAD_REQUEST", ex.getMessage()));
+        ApiResponse<Void> response = ApiResponse.fail("Invalid request", errors, request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        List<ApiError> errors = List.of(new ApiError("NOT_FOUND", "Resource not found"));
+        ApiResponse<Void> response = ApiResponse.fail("Resource not found", errors, request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex, HttpServletRequest request) {
-        List<ApiError> errors = List.of(new ApiError("INTERNAL_ERROR", ex.getMessage()));
+        log.error("Unhandled server error at {}", request.getRequestURI(), ex);
+        List<ApiError> errors = List.of(new ApiError("INTERNAL_ERROR", "An unexpected error occurred"));
         ApiResponse<Void> response = ApiResponse.fail("Unexpected server error", errors, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }

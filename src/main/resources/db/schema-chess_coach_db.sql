@@ -1,4 +1,8 @@
 -- This file documents the database schema and indexes for reference.
+-- Overview: coaches own trainees; attendance tracks daily presence per trainee.
+-- Matches define scheduled events; match_participants enroll trainees in matches.
+-- Match_results store pairings and scores; ratings_history tracks rating changes.
+-- Notifications deliver messages to trainees (nullable trainee_id allows global).
 CREATE TABLE IF NOT EXISTS coaches (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     full_name VARCHAR(120) NOT NULL,
@@ -17,6 +21,7 @@ CREATE TABLE IF NOT EXISTS trainees (
     grade_level VARCHAR(50) NOT NULL,
     course_strand VARCHAR(100) NOT NULL,
     current_rating INT NOT NULL,
+    current_rating_mode VARCHAR(10),
     highest_rating INT,
     ranking INT,
     photo_path VARCHAR(255),

@@ -5,6 +5,7 @@ import com.chesscoach.main.dto.match.MatchCreateRequest;
 import com.chesscoach.main.dto.match.MatchGenerationRequest;
 import com.chesscoach.main.dto.match.MatchResultRequest;
 import com.chesscoach.main.dto.match.MatchSummaryResponse;
+import com.chesscoach.main.exception.ConflictException;
 import com.chesscoach.main.exception.ResourceNotFoundException;
 import com.chesscoach.main.model.Match;
 import com.chesscoach.main.model.MatchFormat;
@@ -65,6 +66,9 @@ public class MatchServiceImpl implements MatchService {
         if (trainees.isEmpty()) {
             throw new ResourceNotFoundException("No trainees provided for match creation");
         }
+        if (trainees.size() > 2) {
+            throw new IllegalArgumentException("Create match supports only 1 or 2 trainees");
+        }
         Long whiteId = trainees.get(0).getId();
         Long blackId = trainees.size() > 1 ? trainees.get(1).getId() : null;
         Match match = createMatchRecord(format, 1, request.getScheduledDate(), whiteId, blackId);
@@ -115,10 +119,35 @@ public class MatchServiceImpl implements MatchService {
     public MatchResultRequest recordResult(MatchResultRequest request) {
         Match match = matchRepository.findById(request.getMatchId())
             .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + request.getMatchId()));
-        Trainee white = traineeRepository.findById(request.getWhiteTraineeId())
-            .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + request.getWhiteTraineeId()));
-        Trainee black = traineeRepository.findById(request.getBlackTraineeId())
-            .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + request.getBlackTraineeId()));
+        if (match.getStatus() == MatchStatus.COMPLETED || !matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId()).isEmpty()) {
+            throw new ConflictException("Result already recorded for match: " + match.getId());
+        }
+
+        validateStrictChessScores(request.getWhiteScore(), request.getBlackScore());
+
+        List<MatchParticipant> participants = matchParticipantRepository.findByMatchIdOrderByBoardNumberAsc(match.getId());
+        if (participants.size() != 2) {
+            throw new IllegalArgumentException("Only 2-player matches can be recorded via this endpoint");
+        }
+        Long expectedWhiteId = participants.stream()
+            .filter(p -> p.getPieceColor() == PieceColor.WHITE)
+            .map(p -> p.getTrainee().getId())
+            .findFirst()
+            .orElse(participants.get(0).getTrainee().getId());
+        Long expectedBlackId = participants.stream()
+            .filter(p -> p.getPieceColor() == PieceColor.BLACK)
+            .map(p -> p.getTrainee().getId())
+            .findFirst()
+            .orElseGet(() -> participants.stream()
+                .map(p -> p.getTrainee().getId())
+                .filter(id -> !id.equals(expectedWhiteId))
+                .findFirst()
+                .orElse(participants.get(1).getTrainee().getId()));
+
+        Trainee white = traineeRepository.findById(expectedWhiteId)
+            .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + expectedWhiteId));
+        Trainee black = traineeRepository.findById(expectedBlackId)
+            .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + expectedBlackId));
 
         MatchResult result = new MatchResult();
         result.setMatch(match);
@@ -170,7 +199,7 @@ public class MatchServiceImpl implements MatchService {
             matchParticipantRepository.save(createParticipant(savedMatch, whiteId, PieceColor.WHITE, 1, false));
         }
         if (blackId != null) {
-            matchParticipantRepository.save(createParticipant(savedMatch, blackId, PieceColor.BLACK, 1, false));
+            matchParticipantRepository.save(createParticipant(savedMatch, blackId, PieceColor.BLACK, 2, false));
         }
         return savedMatch;
     }
@@ -216,11 +245,22 @@ public class MatchServiceImpl implements MatchService {
         response.setScheduledDate(match.getScheduledDate());
         response.setFormat(match.getFormat().name());
         if (!participants.isEmpty()) {
-            MatchParticipant white = participants.get(0);
+            MatchParticipant white = participants.stream()
+                .filter(p -> p.getPieceColor() == PieceColor.WHITE)
+                .findFirst()
+                .orElse(participants.get(0));
             response.setWhitePlayer(traineeMap.get(white.getTrainee().getId()).getName());
             if (participants.size() > 1) {
-                MatchParticipant black = participants.get(1);
-                response.setBlackPlayer(traineeMap.get(black.getTrainee().getId()).getName());
+                MatchParticipant black = participants.stream()
+                    .filter(p -> p.getPieceColor() == PieceColor.BLACK)
+                    .findFirst()
+                    .orElseGet(() -> participants.stream()
+                        .filter(p -> !p.getTrainee().getId().equals(white.getTrainee().getId()))
+                        .findFirst()
+                        .orElse(null));
+                response.setBlackPlayer(black != null
+                    ? traineeMap.get(black.getTrainee().getId()).getName()
+                    : "BYE");
             } else {
                 response.setBlackPlayer("BYE");
             }
@@ -237,6 +277,15 @@ public class MatchServiceImpl implements MatchService {
             return MatchResultType.BLACK_WIN;
         }
         return MatchResultType.DRAW;
+    }
+
+    private void validateStrictChessScores(double whiteScore, double blackScore) {
+        boolean whiteWin = whiteScore == 1.0 && blackScore == 0.0;
+        boolean blackWin = whiteScore == 0.0 && blackScore == 1.0;
+        boolean draw = whiteScore == 0.5 && blackScore == 0.5;
+        if (!whiteWin && !blackWin && !draw) {
+            throw new IllegalArgumentException("Score must be one of: 1-0, 0-1, or 0.5-0.5");
+        }
     }
 
 }

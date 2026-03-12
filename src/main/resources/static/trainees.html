@@ -26,15 +26,19 @@
         </div>
 
         <section class="panel">
-            <h3>Create Trainee</h3>
+            <h3 id="traineeFormTitle">Create Trainee</h3>
             <form id="traineeForm" class="grid cols-2">
+                <input type="hidden" name="id">
                 <div><label>Name</label><input name="name" required></div>
                 <div><label>Age</label><input type="number" name="age" required></div>
                 <div><label>Address</label><input name="address" required></div>
                 <div><label>Grade Level</label><input name="gradeLevel" required></div>
                 <div><label>Course/Strand</label><input name="courseStrand" required></div>
                 <div><label>Chess.com Username</label><input name="chessUsername" placeholder="e.g. hikaru" required></div>
-                <div style="grid-column:1 / -1;"><button type="submit">Save Trainee</button></div>
+                <div style="grid-column:1 / -1; display:flex; gap:8px;">
+                    <button id="saveTraineeBtn" type="submit">Save Trainee</button>
+                    <button id="cancelEditBtn" type="button" class="secondary" style="display:none;">Cancel Edit</button>
+                </div>
             </form>
         </section>
 
@@ -55,9 +59,33 @@
                 <div><label>Age Min</label><input type="number" name="ageMin"></div>
                 <div><label>Age Max</label><input type="number" name="ageMax"></div>
                 <div><label>Course/Strand</label><input name="courseStrand"></div>
+                <div>
+                    <label>Ranking Order</label>
+                    <select name="rankingOrder">
+                        <option value="asc" selected>Lowest to Highest</option>
+                        <option value="desc">Highest to Lowest</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Sync Mode</label>
+                    <select id="syncMode">
+                        <option value="rapid" selected>Rapid</option>
+                        <option value="blitz">Blitz</option>
+                        <option value="bullet">Bullet</option>
+                    </select>
+                </div>
                 <div><label>Page</label><input type="number" name="page" value="0"></div>
                 <div><label>Size</label><input type="number" name="size" value="20"></div>
-                <div><label>&nbsp;</label><button type="submit">Apply Filters</button></div>
+                <div style="display:flex; gap:8px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label>&nbsp;</label>
+                        <button type="submit">Apply Filters</button>
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                        <button id="syncRatingsBtn" type="button" class="secondary">Sync Ratings</button>
+                    </div>
+                </div>
             </form>
         </section>
 
@@ -69,7 +97,9 @@
                     <th>Name</th>
                     <th>Age</th>
                     <th>Course</th>
-                    <th>Rating</th>
+                    <th>Current Rating</th>
+                    <th>Highest Rating</th>
+                    <th>Mode</th>
                     <th>Rank</th>
                     <th>Chess.com</th>
                     <th>Photo Path</th>

@@ -25,8 +25,10 @@ import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -34,6 +36,7 @@ import java.util.Optional;
 public class ReportServiceImpl implements ReportService {
 
     private static final String DEFAULT_COACH_EMAIL = "coach@local";
+    private static final int MAX_IMPORT_ERRORS = 100;
 
     private final TraineeRepository traineeRepository;
     private final AttendanceRepository attendanceRepository;
@@ -84,26 +87,31 @@ public class ReportServiceImpl implements ReportService {
         int totalRows = 0;
         int successRows = 0;
         int failedRows = 0;
+        List<String> errors = new ArrayList<>();
 
         Coach coach = getOrCreateDefaultCoach();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String header = reader.readLine();
+            if (header == null || header.isBlank()) {
+                throw new IllegalArgumentException("CSV header row is required");
+            }
+            CsvColumns columns = CsvColumns.fromHeader(header);
+
             String line;
-            boolean headerSkipped = false;
             while ((line = reader.readLine()) != null) {
-                totalRows++;
-                if (!headerSkipped) {
-                    headerSkipped = true;
-                    continue;
-                }
                 if (line.isBlank()) {
                     continue;
                 }
+                totalRows++;
                 try {
-                    upsertTraineeFromCsv(line, coach);
+                    upsertTraineeFromCsv(line, coach, columns);
                     successRows++;
                 } catch (Exception ex) {
                     failedRows++;
+                    if (errors.size() < MAX_IMPORT_ERRORS) {
+                        errors.add("Row " + (totalRows + 1) + ": " + ex.getMessage());
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -112,9 +120,10 @@ public class ReportServiceImpl implements ReportService {
 
         ReportImportResponse response = new ReportImportResponse();
         response.setFileName(file.getOriginalFilename());
-        response.setTotalRows(Math.max(0, totalRows - 1));
+        response.setTotalRows(totalRows);
         response.setSuccessRows(successRows);
         response.setFailedRows(failedRows);
+        response.setErrors(errors);
         return response;
     }
 
@@ -135,7 +144,7 @@ public class ReportServiceImpl implements ReportService {
 
     private List<String> exportTraineesCsv() {
         List<String> lines = new ArrayList<>();
-        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,highestRating,ranking,photoPath,chessUsername");
+        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,currentRatingMode,highestRating,ranking,photoPath,chessUsername");
         for (Trainee t : traineeRepository.findAll()) {
             lines.add(String.join(",",
                 safeCsv(t.getId()),
@@ -145,6 +154,7 @@ public class ReportServiceImpl implements ReportService {
                 safeCsv(t.getGradeLevel()),
                 safeCsv(t.getCourseStrand()),
                 safeCsv(t.getCurrentRating()),
+                safeCsv(t.getCurrentRatingMode()),
                 safeCsv(t.getHighestRating()),
                 safeCsv(t.getRanking()),
                 safeCsv(t.getPhotoPath()),
@@ -192,22 +202,23 @@ public class ReportServiceImpl implements ReportService {
         return lines;
     }
 
-    private void upsertTraineeFromCsv(String line, Coach coach) {
+    private void upsertTraineeFromCsv(String line, Coach coach, CsvColumns columns) {
         String[] raw = splitCsv(line);
-        if (raw.length < 6) {
+        if (raw.length == 0) {
             throw new IllegalArgumentException("Invalid CSV row");
         }
 
-        String name = clean(raw[0]);
-        Integer age = parseInt(raw[1], true);
-        String address = clean(raw[2]);
-        String gradeLevel = clean(raw[3]);
-        String courseStrand = clean(raw[4]);
-        Integer currentRating = parseInt(raw[5], true);
-        Integer highestRating = raw.length > 6 ? parseInt(raw[6], false) : null;
-        Integer ranking = raw.length > 7 ? parseInt(raw[7], false) : null;
-        String photoPath = raw.length > 8 ? clean(raw[8]) : null;
-        String chessUsername = raw.length > 9 ? clean(raw[9]) : null;
+        String name = clean(getCell(raw, columns, "name", 0));
+        Integer age = parseInt(getCell(raw, columns, "age", 1), true);
+        String address = clean(getCell(raw, columns, "address", 2));
+        String gradeLevel = clean(getCell(raw, columns, "gradeLevel", 3));
+        String courseStrand = clean(getCell(raw, columns, "courseStrand", 4));
+        Integer currentRating = parseInt(getCell(raw, columns, "currentRating", 5), true);
+        String currentRatingMode = clean(getCell(raw, columns, "currentRatingMode", 6));
+        Integer highestRating = parseInt(getCell(raw, columns, "highestRating", 7), false);
+        Integer ranking = parseInt(getCell(raw, columns, "ranking", 8), false);
+        String photoPath = clean(getCell(raw, columns, "photoPath", 9));
+        String chessUsername = clean(getCell(raw, columns, "chessUsername", 10));
 
         if (name.isBlank() || address.isBlank() || gradeLevel.isBlank() || courseStrand.isBlank()) {
             throw new IllegalArgumentException("Missing required trainee values");
@@ -222,11 +233,21 @@ public class ReportServiceImpl implements ReportService {
         trainee.setGradeLevel(gradeLevel);
         trainee.setCourseStrand(courseStrand);
         trainee.setCurrentRating(currentRating);
+        trainee.setCurrentRatingMode(currentRatingMode.isBlank() ? null : currentRatingMode);
         trainee.setHighestRating(highestRating != null ? highestRating : currentRating);
         trainee.setRanking(ranking);
-        trainee.setPhotoPath(photoPath);
-        trainee.setChessUsername(chessUsername);
+        trainee.setPhotoPath(photoPath.isBlank() ? null : photoPath);
+        trainee.setChessUsername(chessUsername.isBlank() ? null : chessUsername);
         traineeRepository.save(trainee);
+    }
+
+    private static String getCell(String[] raw, CsvColumns columns, String header, int fallbackWithoutId) {
+        Integer fromHeader = columns.indexByHeader.get(header.toLowerCase(Locale.ROOT));
+        int index = fromHeader != null ? fromHeader : fallbackWithoutId + columns.leadingOffset;
+        if (index < 0 || index >= raw.length) {
+            return "";
+        }
+        return raw[index];
     }
 
     private Coach getOrCreateDefaultCoach() {
@@ -285,6 +306,29 @@ public class ReportServiceImpl implements ReportService {
             return "\"" + text.replace("\"", "\"\"") + "\"";
         }
         return text;
+    }
+
+    private static final class CsvColumns {
+        private final Map<String, Integer> indexByHeader;
+        private final int leadingOffset;
+
+        private CsvColumns(Map<String, Integer> indexByHeader, int leadingOffset) {
+            this.indexByHeader = indexByHeader;
+            this.leadingOffset = leadingOffset;
+        }
+
+        private static CsvColumns fromHeader(String headerLine) {
+            String[] cells = splitCsv(headerLine);
+            Map<String, Integer> indexByHeader = new LinkedHashMap<>();
+            for (int i = 0; i < cells.length; i++) {
+                String key = clean(cells[i]).toLowerCase(Locale.ROOT);
+                if (!key.isBlank()) {
+                    indexByHeader.putIfAbsent(key, i);
+                }
+            }
+            int leadingOffset = indexByHeader.getOrDefault("id", -1) == 0 ? 1 : 0;
+            return new CsvColumns(indexByHeader, leadingOffset);
+        }
     }
 }
 

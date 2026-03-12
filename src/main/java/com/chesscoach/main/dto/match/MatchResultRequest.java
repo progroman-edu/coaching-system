@@ -2,6 +2,8 @@
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 
 public class MatchResultRequest {
 
@@ -9,15 +11,13 @@ public class MatchResultRequest {
     private Long matchId;
 
     @NotNull
-    private Long whiteTraineeId;
-
-    @NotNull
-    private Long blackTraineeId;
-
-    @NotNull
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "1.0")
     private Double whiteScore;
 
     @NotNull
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "1.0")
     private Double blackScore;
 
     public Long getMatchId() {
@@ -26,22 +26,6 @@ public class MatchResultRequest {
 
     public void setMatchId(Long matchId) {
         this.matchId = matchId;
-    }
-
-    public Long getWhiteTraineeId() {
-        return whiteTraineeId;
-    }
-
-    public void setWhiteTraineeId(Long whiteTraineeId) {
-        this.whiteTraineeId = whiteTraineeId;
-    }
-
-    public Long getBlackTraineeId() {
-        return blackTraineeId;
-    }
-
-    public void setBlackTraineeId(Long blackTraineeId) {
-        this.blackTraineeId = blackTraineeId;
     }
 
     public Double getWhiteScore() {

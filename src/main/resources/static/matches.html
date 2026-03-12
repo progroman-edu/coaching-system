@@ -65,11 +65,15 @@
                     <!-- Real backend ID is set automatically from selected match reference. -->
                     <input type="hidden" name="matchId" required>
                 </div>
-                <div><label>White Trainee ID</label><input type="number" name="whiteTraineeId" required></div>
-                <div><label>Black Trainee ID</label><input type="number" name="blackTraineeId" required></div>
-                <div><label>&nbsp;</label><span></span></div>
-                <div><label>White Score</label><input type="number" step="0.5" name="whiteScore" required></div>
-                <div><label>Black Score</label><input type="number" step="0.5" name="blackScore" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Result</label>
+                    <select name="resultType" required>
+                        <option value="">Select result</option>
+                        <option value="WHITE_WIN">White won (1-0)</option>
+                        <option value="BLACK_WIN">Black won (0-1)</option>
+                        <option value="DRAW">Draw (0.5-0.5)</option>
+                    </select>
+                </div>
                 <div style="grid-column:1 / -1;"><button type="submit">Record Result</button></div>
             </form>
         </section>

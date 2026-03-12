@@ -1,11 +1,14 @@
 // This DTO defines response payload fields for ReportImport endpoints.
 package com.chesscoach.main.dto.report;
 
+import java.util.List;
+
 public class ReportImportResponse {
     private String fileName;
     private Integer totalRows;
     private Integer successRows;
     private Integer failedRows;
+    private List<String> errors;
 
     public String getFileName() {
         return fileName;
@@ -37,6 +40,14 @@ public class ReportImportResponse {
 
     public void setFailedRows(Integer failedRows) {
         this.failedRows = failedRows;
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
     }
 }
 

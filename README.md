@@ -81,9 +81,9 @@ CREATE DATABASE chess_coach_db;
 2. Set environment variables (PowerShell):
 
 ```powershell
-$env:DB_URL="jdbc:mysql://localhost:3306/chess_coach_db"
-$env:DB_USERNAME="root"
-$env:DB_PASSWORD="pass123"
+$env:APP_DB_URL="jdbc:mysql://localhost:3306/chess_coach_db?serverTimezone=UTC"
+$env:APP_DB_USERNAME="root"
+$env:APP_DB_PASSWORD="pass123"
 ```
 
 3. Start app:
@@ -108,9 +108,9 @@ Services:
 
 Compose defaults:
 - DB name: `chess_coach_db`
-- DB user: `chesscoach`
-- DB password: `chesscoach`
-- Root password: `root`
+- DB user: from `MYSQL_USER` (default `chesscoach`)
+- DB password: required `MYSQL_PASSWORD`
+- Root password: required `MYSQL_ROOT_PASSWORD`
 
 ## Build and Test
 
@@ -127,7 +127,7 @@ Jar output:
 From `src/main/resources/application.properties`:
 
 - `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`
-- `spring.jpa.hibernate.ddl-auto=update`
+- `spring.jpa.hibernate.ddl-auto` (defaults to `validate`, override via `SPRING_JPA_HIBERNATE_DDL_AUTO`)
 - `spring.servlet.multipart.max-file-size=5MB`
 - `app.rating.k-factor=20`
 - `app.upload.base-dir` (default `uploads`)

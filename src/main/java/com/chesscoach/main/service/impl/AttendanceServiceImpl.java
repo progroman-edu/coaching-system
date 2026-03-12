@@ -68,12 +68,17 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     private AttendanceReportResponse buildReportForTrainee(LocalDate startDate, LocalDate endDate, Long traineeId) {
-        traineeRepository.findById(traineeId)
+        Trainee trainee = traineeRepository.findById(traineeId)
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + traineeId));
 
         List<Attendance> records = attendanceRepository
             .findByTraineeIdAndAttendanceDateBetweenOrderByAttendanceDateAsc(traineeId, startDate, endDate);
-        return toReport(startDate, endDate, records);
+        AttendanceReportResponse report = toReport(startDate, endDate, records);
+        if (records.isEmpty()) {
+            report.setTraineeId(trainee.getId());
+            report.setTraineeName(trainee.getName());
+        }
+        return report;
     }
 
     private AttendanceReportResponse toReport(LocalDate startDate, LocalDate endDate, List<Attendance> records) {

@@ -9,6 +9,7 @@ public class TraineeResponse {
     private String gradeLevel;
     private String courseStrand;
     private Integer currentRating;
+    private String currentRatingMode;
     private Integer highestRating;
     private Integer ranking;
     private String photoPath;
@@ -68,6 +69,14 @@ public class TraineeResponse {
 
     public void setCurrentRating(Integer currentRating) {
         this.currentRating = currentRating;
+    }
+
+    public String getCurrentRatingMode() {
+        return currentRatingMode;
+    }
+
+    public void setCurrentRatingMode(String currentRatingMode) {
+        this.currentRatingMode = currentRatingMode;
     }
 
     public Integer getHighestRating() {
