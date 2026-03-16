@@ -20,7 +20,6 @@ import com.chesscoach.main.repository.MatchRepository;
 import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.MatchService;
-import com.chesscoach.main.service.RatingService;
 import com.chesscoach.main.util.RoundRobinGenerator;
 import com.chesscoach.main.util.SwissPairingGenerator;
 import org.springframework.stereotype.Service;
@@ -42,20 +41,17 @@ public class MatchServiceImpl implements MatchService {
     private final MatchParticipantRepository matchParticipantRepository;
     private final MatchResultRepository matchResultRepository;
     private final TraineeRepository traineeRepository;
-    private final RatingService ratingService;
 
     public MatchServiceImpl(
         MatchRepository matchRepository,
         MatchParticipantRepository matchParticipantRepository,
         MatchResultRepository matchResultRepository,
-        TraineeRepository traineeRepository,
-        RatingService ratingService
+        TraineeRepository traineeRepository
     ) {
         this.matchRepository = matchRepository;
         this.matchParticipantRepository = matchParticipantRepository;
         this.matchResultRepository = matchResultRepository;
         this.traineeRepository = traineeRepository;
-        this.ratingService = ratingService;
     }
 
     @Override
@@ -157,9 +153,7 @@ public class MatchServiceImpl implements MatchService {
         result.setBlackScore(request.getBlackScore());
         result.setResultType(resolveResultType(request.getWhiteScore(), request.getBlackScore()));
         result.setPlayedAt(OffsetDateTime.now());
-        MatchResult savedResult = matchResultRepository.save(result);
-
-        ratingService.applyMatchResultRatingUpdate(savedResult);
+        matchResultRepository.save(result);
 
         match.setStatus(MatchStatus.COMPLETED);
         matchRepository.save(match);

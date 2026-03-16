@@ -1,19 +1,13 @@
 // This file verifies a basic service flow using the test profile.
 package com.chesscoach.main;
 
-import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
-import com.chesscoach.main.dto.attendance.AttendanceReportResponse;
-import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
-import com.chesscoach.main.dto.match.MatchCreateRequest;
-import com.chesscoach.main.dto.report.ReportImportResponse;
-import com.chesscoach.main.dto.trainee.TraineeRequest;
-import com.chesscoach.main.dto.trainee.TraineeResponse;
-import com.chesscoach.main.service.AnalyticsService;
-import com.chesscoach.main.service.AttendanceService;
-import com.chesscoach.main.service.ChessComService;
-import com.chesscoach.main.service.MatchService;
-import com.chesscoach.main.service.ReportService;
-import com.chesscoach.main.service.TraineeService;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,13 +17,21 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
+import com.chesscoach.main.dto.attendance.AttendanceReportResponse;
+import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
+import com.chesscoach.main.dto.match.MatchCreateRequest;
+import com.chesscoach.main.dto.match.MatchResultRequest;
+import com.chesscoach.main.dto.match.MatchSummaryResponse;
+import com.chesscoach.main.dto.report.ReportImportResponse;
+import com.chesscoach.main.dto.trainee.TraineeRequest;
+import com.chesscoach.main.dto.trainee.TraineeResponse;
+import com.chesscoach.main.service.AnalyticsService;
+import com.chesscoach.main.service.AttendanceService;
+import com.chesscoach.main.service.ChessComService;
+import com.chesscoach.main.service.MatchService;
+import com.chesscoach.main.service.ReportService;
+import com.chesscoach.main.service.TraineeService;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -169,7 +171,9 @@ class ServiceSmokeTest {
         TraineeResponse created = createTrainee("No Rating User", "norating-user");
 
         assertThat(created.getCurrentRating()).isEqualTo(1200);
-        assertThat(created.getHighestRating()).isEqualTo(1200);
+        assertThat(created.getHighestRapidRating()).isEqualTo(1200);
+        assertThat(created.getHighestBlitzRating()).isEqualTo(1200);
+        assertThat(created.getHighestBulletRating()).isEqualTo(1200);
     }
 
     @Test
@@ -178,13 +182,37 @@ class ServiceSmokeTest {
         createTrainee("Rank Two", "rank-two");
         createTrainee("Rank Three", "rank-three");
 
-        List<TraineeResponse> asc = traineeService.list(null, null, null, null, null, "asc", 0, 20);
-        List<TraineeResponse> desc = traineeService.list(null, null, null, null, null, "desc", 0, 20);
+        List<TraineeResponse> asc = traineeService.list(null, "asc", 20);
+        List<TraineeResponse> desc = traineeService.list(null, "desc", 20);
 
         assertThat(asc).isNotEmpty();
         assertThat(desc).isNotEmpty();
         assertThat(asc).isSortedAccordingTo(Comparator.comparing(TraineeResponse::getRanking));
         assertThat(desc).isSortedAccordingTo(Comparator.comparing(TraineeResponse::getRanking).reversed());
+    }
+
+    @Test
+    void recordOfflineResultDoesNotChangeRatings() {
+        TraineeResponse white = createTrainee("White Player", "white-player");
+        TraineeResponse black = createTrainee("Black Player", "black-player");
+
+        MatchCreateRequest createRequest = new MatchCreateRequest();
+        createRequest.setFormat("SWISS");
+        createRequest.setScheduledDate(LocalDate.now());
+        createRequest.setTraineeIds(List.of(white.getId(), black.getId()));
+        MatchSummaryResponse match = matchService.createMatch(createRequest);
+
+        MatchResultRequest resultRequest = new MatchResultRequest();
+        resultRequest.setMatchId(match.getMatchId());
+        resultRequest.setWhiteScore(1.0);
+        resultRequest.setBlackScore(0.0);
+        matchService.recordResult(resultRequest);
+
+        TraineeResponse updatedWhite = traineeService.getById(white.getId());
+        TraineeResponse updatedBlack = traineeService.getById(black.getId());
+
+        assertThat(updatedWhite.getCurrentRating()).isEqualTo(white.getCurrentRating());
+        assertThat(updatedBlack.getCurrentRating()).isEqualTo(black.getCurrentRating());
     }
 
     private TraineeResponse createTrainee(String name, String username) {
@@ -198,4 +226,3 @@ class ServiceSmokeTest {
         return traineeService.create(request);
     }
 }
-

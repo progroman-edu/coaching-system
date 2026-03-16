@@ -144,7 +144,7 @@ public class ReportServiceImpl implements ReportService {
 
     private List<String> exportTraineesCsv() {
         List<String> lines = new ArrayList<>();
-        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,currentRatingMode,highestRating,ranking,photoPath,chessUsername");
+        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,currentRatingMode,highestRapidRating,highestBlitzRating,highestBulletRating,ranking,photoPath,chessUsername");
         for (Trainee t : traineeRepository.findAll()) {
             lines.add(String.join(",",
                 safeCsv(t.getId()),
@@ -155,7 +155,9 @@ public class ReportServiceImpl implements ReportService {
                 safeCsv(t.getCourseStrand()),
                 safeCsv(t.getCurrentRating()),
                 safeCsv(t.getCurrentRatingMode()),
-                safeCsv(t.getHighestRating()),
+                safeCsv(t.getHighestRapidRating()),
+                safeCsv(t.getHighestBlitzRating()),
+                safeCsv(t.getHighestBulletRating()),
                 safeCsv(t.getRanking()),
                 safeCsv(t.getPhotoPath()),
                 safeCsv(t.getChessUsername())
@@ -215,10 +217,13 @@ public class ReportServiceImpl implements ReportService {
         String courseStrand = clean(getCell(raw, columns, "courseStrand", 4));
         Integer currentRating = parseInt(getCell(raw, columns, "currentRating", 5), true);
         String currentRatingMode = clean(getCell(raw, columns, "currentRatingMode", 6));
-        Integer highestRating = parseInt(getCell(raw, columns, "highestRating", 7), false);
-        Integer ranking = parseInt(getCell(raw, columns, "ranking", 8), false);
-        String photoPath = clean(getCell(raw, columns, "photoPath", 9));
-        String chessUsername = clean(getCell(raw, columns, "chessUsername", 10));
+        Integer highestRapidRating = parseInt(getCell(raw, columns, "highestRapidRating", 7), false);
+        Integer highestBlitzRating = parseInt(getCell(raw, columns, "highestBlitzRating", 8), false);
+        Integer highestBulletRating = parseInt(getCell(raw, columns, "highestBulletRating", 9), false);
+        Integer legacyHighestRating = parseInt(getCell(raw, columns, "highestRating", 7), false);
+        Integer ranking = parseInt(getCell(raw, columns, "ranking", 10), false);
+        String photoPath = clean(getCell(raw, columns, "photoPath", 11));
+        String chessUsername = clean(getCell(raw, columns, "chessUsername", 12));
 
         if (name.isBlank() || address.isBlank() || gradeLevel.isBlank() || courseStrand.isBlank()) {
             throw new IllegalArgumentException("Missing required trainee values");
@@ -234,11 +239,33 @@ public class ReportServiceImpl implements ReportService {
         trainee.setCourseStrand(courseStrand);
         trainee.setCurrentRating(currentRating);
         trainee.setCurrentRatingMode(currentRatingMode.isBlank() ? null : currentRatingMode);
-        trainee.setHighestRating(highestRating != null ? highestRating : currentRating);
+        trainee.setHighestRapidRating(resolveModeHighest(currentRatingMode, "rapid", highestRapidRating, legacyHighestRating, currentRating));
+        trainee.setHighestBlitzRating(resolveModeHighest(currentRatingMode, "blitz", highestBlitzRating, legacyHighestRating, currentRating));
+        trainee.setHighestBulletRating(resolveModeHighest(currentRatingMode, "bullet", highestBulletRating, legacyHighestRating, currentRating));
         trainee.setRanking(ranking);
         trainee.setPhotoPath(photoPath.isBlank() ? null : photoPath);
         trainee.setChessUsername(chessUsername.isBlank() ? null : chessUsername);
         traineeRepository.save(trainee);
+    }
+
+    private static Integer resolveModeHighest(
+        String currentMode,
+        String targetMode,
+        Integer explicitValue,
+        Integer legacyHighestRating,
+        Integer currentRating
+    ) {
+        if (explicitValue != null) {
+            return explicitValue;
+        }
+        if (legacyHighestRating != null) {
+            return legacyHighestRating;
+        }
+        String normalizedCurrentMode = clean(currentMode).toLowerCase(Locale.ROOT);
+        if (normalizedCurrentMode.equals(targetMode)) {
+            return currentRating;
+        }
+        return null;
     }
 
     private static String getCell(String[] raw, CsvColumns columns, String header, int fallbackWithoutId) {

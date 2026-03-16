@@ -35,8 +35,11 @@ export const api = {
         return request(`/trainees?${query.toString()}`);
     },
     createTrainee: (payload) => request("/trainees", { method: "POST", body: JSON.stringify(payload) }),
+    getTraineeById: (id) => request(`/trainees/${id}`),
     updateTrainee: (id, payload) => request(`/trainees/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteTrainee: (id) => request(`/trainees/${id}`, { method: "DELETE" }),
+    resetTraineeTestData: (confirm = false) =>
+        request(`/trainees/reset-test-data?confirm=${encodeURIComponent(String(confirm))}`, { method: "DELETE" }),
     uploadTraineePhoto: (id, file) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -63,6 +66,7 @@ export const api = {
         const formData = new FormData();
         formData.append("file", file);
         return request("/reports/import/trainees", { method: "POST", body: formData });
-    }
+    },
+    reportDownloadUrl: (fileName) => `${API_BASE}/reports/download/${encodeURIComponent(fileName)}`
 };
 

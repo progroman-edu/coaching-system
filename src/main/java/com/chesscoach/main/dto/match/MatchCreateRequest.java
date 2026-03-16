@@ -3,10 +3,14 @@ package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Setter
+@Getter
 public class MatchCreateRequest {
 
     @NotNull
@@ -18,28 +22,5 @@ public class MatchCreateRequest {
     @NotNull
     private String format;
 
-    public LocalDate getScheduledDate() {
-        return scheduledDate;
-    }
-
-    public void setScheduledDate(LocalDate scheduledDate) {
-        this.scheduledDate = scheduledDate;
-    }
-
-    public List<Long> getTraineeIds() {
-        return traineeIds;
-    }
-
-    public void setTraineeIds(List<Long> traineeIds) {
-        this.traineeIds = traineeIds;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
 }
 

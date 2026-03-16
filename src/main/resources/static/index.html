@@ -7,16 +7,23 @@
     <title>Coach Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+<body class="app-dark">
 <div class="layout">
     <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
     <aside class="sidebar">
-        <div class="brand"> </div>
-        <a class="nav-link active" href="/index.html">Dashboard</a>
-        <a class="nav-link" href="/trainees.html">Trainees</a>
-        <a class="nav-link" href="/matches.html">Matches</a>
-        <a class="nav-link" href="/attendance.html">Attendance</a>
-        <a class="nav-link" href="/reports.html">Reports</a>
+        <div class="brand">
+            <div class="brand-logo">C</div>
+            <div class="brand-text">
+                <span>Coach Panel</span>
+            </div>
+        </div>
+        <nav class="nav">
+            <a class="nav-link active" href="/index.html">Dashboard</a>
+            <a class="nav-link" href="/trainees.html">Trainees</a>
+            <a class="nav-link" href="/matches.html">Matches</a>
+            <a class="nav-link" href="/attendance.html">Attendance</a>
+            <a class="nav-link" href="/reports.html">Reports</a>
+        </nav>
     </aside>
     <main class="content">
         <div id="msg" class="msg" style="display:none;"></div>

@@ -36,7 +36,7 @@ public class ChessComServiceImpl implements ChessComService {
     private final RatingsHistoryRepository ratingsHistoryRepository;
     private final HttpClient httpClient = HttpClient.newBuilder().build();
 
-    @Value("${app.chesscom.base-url:https://api.chess.com/pub/player/}")
+    @Value("${app.chesscom.base-url:https://api.chess.com/pub}")
     private String baseUrl;
 
     @Value("${app.chesscom.user-agent:ChessCoachMain/1.0 (contact: coach@example.com)}")
@@ -57,25 +57,32 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     public ChessComRatingResponse getRatings(String username) {
-        JsonNode stats = fetchJson("/player/" + encode(username) + "/stats");
+        JsonNode stats = fetchJson("/player/" + encode(username.toLowerCase()) + "/stats");
+        System.out.println("DEBUG Chess.com stats for " + username + ": " + stats.toString());
+        
+        Integer rapidRating = getRating(stats, "chess_rapid");
+        Integer blitzRating = getRating(stats, "chess_blitz");
+        Integer bulletRating = getRating(stats, "chess_bullet");
+        System.out.println("DEBUG ratings - rapid: " + rapidRating + ", blitz: " + blitzRating + ", bullet: " + bulletRating);
+        
         ChessComRatingResponse response = new ChessComRatingResponse();
         response.setUsername(username);
-        response.setRapid(getRating(stats, "chess_rapid"));
-        response.setBlitz(getRating(stats, "chess_blitz"));
-        response.setBullet(getRating(stats, "chess_bullet"));
+        response.setRapid(rapidRating);
+        response.setBlitz(blitzRating);
+        response.setBullet(bulletRating);
         response.setPuzzleRush(getPuzzleRush(stats));
         return response;
     }
 
     @Override
     public JsonNode getArchives(String username) {
-        return fetchJson("/player/" + encode(username) + "/games/archives");
+        return fetchJson("/player/" + encode(username.toLowerCase()) + "/games/archives");
     }
 
     @Override
     public JsonNode getMonthlyGames(String username, int year, int month) {
         String paddedMonth = String.format("%02d", month);
-        return fetchJson("/player/" + encode(username) + "/games/" + year + "/" + paddedMonth);
+        return fetchJson("/player/" + encode(username.toLowerCase()) + "/games/" + year + "/" + paddedMonth);
     }
 
     @Override
@@ -148,7 +155,10 @@ public class ChessComServiceImpl implements ChessComService {
             throw new IllegalArgumentException("Trainee has no chessUsername configured");
         }
 
-        ChessComRatingResponse ratings = getRatings(trainee.getChessUsername());
+        String usernameToFetch = trainee.getChessUsername().toLowerCase();
+        System.out.println("DEBUG syncTraineeRating - username from trainee: " + usernameToFetch);
+        
+        ChessComRatingResponse ratings = getRatings(usernameToFetch);
         String resolvedMode = normalizedMode;
         Integer target = resolveRatingByMode(ratings, normalizedMode);
         if (target == null) {
@@ -169,8 +179,8 @@ public class ChessComServiceImpl implements ChessComService {
 
         int oldRating = trainee.getCurrentRating() != null ? trainee.getCurrentRating() : target;
         trainee.setCurrentRating(target);
-        trainee.setHighestRating(Math.max(target, trainee.getHighestRating() == null ? target : trainee.getHighestRating()));
         trainee.setCurrentRatingMode(resolvedMode);
+        applyHighestByMode(trainee, resolvedMode, target);
         traineeRepository.save(trainee);
         recomputeRankings();
 
@@ -219,6 +229,13 @@ public class ChessComServiceImpl implements ChessComService {
                 .GET()
                 .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("DEBUG API URL: " + uri + " | Status: " + response.statusCode());
+            if (response.statusCode() == 404) {
+                throw new IllegalStateException("Chess.com player not found");
+            }
+            if (response.statusCode() == 429) {
+                throw new IllegalStateException("Chess.com rate limit exceeded");
+            }
             if (response.statusCode() >= 400) {
                 throw new IllegalStateException("Chess.com API error: HTTP " + response.statusCode());
             }
@@ -232,8 +249,26 @@ public class ChessComServiceImpl implements ChessComService {
     }
 
     private static Integer getRating(JsonNode root, String nodeName) {
-        JsonNode node = root.path(nodeName).path("last").path("rating");
-        return node.isInt() ? node.intValue() : null;
+        if (root == null || root.isMissingNode()) {
+            return null;
+        }
+
+        JsonNode modeNode = root.get(nodeName);
+        if (modeNode == null || modeNode.isMissingNode()) {
+            return null;
+        }
+
+        JsonNode lastNode = modeNode.get("last");
+        if (lastNode == null || lastNode.isMissingNode()) {
+            return null;
+        }
+
+        JsonNode ratingNode = lastNode.get("rating");
+        if (ratingNode == null || !ratingNode.isNumber()) {
+            return null;
+        }
+
+        return ratingNode.intValue();
     }
 
     private static Integer getPuzzleRush(JsonNode root) {
@@ -256,6 +291,20 @@ public class ChessComServiceImpl implements ChessComService {
             case "bullet" -> ratings.getBullet();
             default -> null;
         };
+    }
+
+    private static void applyHighestByMode(Trainee trainee, String mode, int rating) {
+        switch (mode) {
+            case "rapid" -> trainee.setHighestRapidRating(maxValue(trainee.getHighestRapidRating(), rating));
+            case "blitz" -> trainee.setHighestBlitzRating(maxValue(trainee.getHighestBlitzRating(), rating));
+            case "bullet" -> trainee.setHighestBulletRating(maxValue(trainee.getHighestBulletRating(), rating));
+            default -> {
+            }
+        }
+    }
+
+    private static int maxValue(Integer current, int candidate) {
+        return current == null ? candidate : Math.max(current, candidate);
     }
 
     private static String encode(String value) {

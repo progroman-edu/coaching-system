@@ -99,8 +99,17 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         long presentCount = attendance.stream().filter(a -> Boolean.TRUE.equals(a.getPresent())).count();
         double attendancePercentage = attendance.isEmpty() ? 0.0 : (presentCount * 100.0) / attendance.size();
+        int highestByMode = List.of(
+                trainee.getHighestRapidRating(),
+                trainee.getHighestBlitzRating(),
+                trainee.getHighestBulletRating()
+            ).stream()
+            .filter(value -> value != null)
+            .mapToInt(Integer::intValue)
+            .max()
+            .orElse(trainee.getCurrentRating());
         int highest = history.isEmpty()
-            ? (trainee.getHighestRating() != null ? trainee.getHighestRating() : trainee.getCurrentRating())
+            ? highestByMode
             : history.stream().mapToInt(RatingsHistory::getNewRating).max().orElse(trainee.getCurrentRating());
 
         TraineePerformanceResponse response = new TraineePerformanceResponse();

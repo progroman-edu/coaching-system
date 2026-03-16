@@ -1,35 +1,17 @@
 // This DTO defines response payload fields for RatingTrendPoint endpoints.
 package com.chesscoach.main.dto.analytics;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 
+@Setter
+@Getter
 public class RatingTrendPointResponse {
     private OffsetDateTime timestamp;
     private Integer rating;
     private Integer change;
 
-    public OffsetDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(OffsetDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public Integer getRating() {
-        return rating;
-    }
-
-    public void setRating(Integer rating) {
-        this.rating = rating;
-    }
-
-    public Integer getChange() {
-        return change;
-    }
-
-    public void setChange(Integer change) {
-        this.change = change;
-    }
 }
 

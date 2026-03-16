@@ -1,23 +1,19 @@
 // This service interface defines operations for Trainee workflows.
 package com.chesscoach.main.service;
 
-import com.chesscoach.main.dto.trainee.TraineeRequest;
-import com.chesscoach.main.dto.trainee.TraineeResponse;
+import java.util.List;
+
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import com.chesscoach.main.dto.trainee.TraineeRequest;
+import com.chesscoach.main.dto.trainee.TraineeResponse;
 
 public interface TraineeService {
     TraineeResponse create(TraineeRequest request);
 
     List<TraineeResponse> list(
         Integer ratingMin,
-        Integer ratingMax,
-        Integer ageMin,
-        Integer ageMax,
-        String courseStrand,
         String rankingOrder,
-        Integer page,
         Integer size
     );
 

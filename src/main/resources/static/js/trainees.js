@@ -7,6 +7,8 @@ const tbody = document.getElementById("traineeRows");
 const form = document.getElementById("traineeForm");
 const filterForm = document.getElementById("filterForm");
 const photoForm = document.getElementById("photoForm");
+const lookupForm = document.getElementById("lookupForm");
+const lookupOutput = document.getElementById("lookupOutput");
 const formTitle = document.getElementById("traineeFormTitle");
 const saveBtn = document.getElementById("saveTraineeBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -54,7 +56,9 @@ async function loadTrainees(params = {}) {
                 <td>${escapeHtml(t.age ?? "")}</td>
                 <td>${escapeHtml(t.courseStrand ?? "")}</td>
                 <td>${escapeHtml(t.currentRating ?? "")}</td>
-                <td>${escapeHtml(t.highestRating ?? "")}</td>
+                <td>${escapeHtml(t.highestRapidRating ?? "")}</td>
+                <td>${escapeHtml(t.highestBlitzRating ?? "")}</td>
+                <td>${escapeHtml(t.highestBulletRating ?? "")}</td>
                 <td>${escapeHtml(t.currentRatingMode ?? "")}</td>
                 <td>${escapeHtml(t.ranking ?? "")}</td>
                 <td>${escapeHtml(t.chessUsername ?? "")}</td>
@@ -186,6 +190,24 @@ photoForm?.addEventListener("submit", async (e) => {
         showMessage(msg, "Photo uploaded.");
         photoForm.reset();
         await loadTrainees(lastFilterParams);
+    } catch (err) {
+        showMessage(msg, err.message, false);
+    }
+});
+
+lookupForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearMessage(msg);
+    const data = new FormData(lookupForm);
+    const traineeId = data.get("traineeId");
+    if (!traineeId) {
+        showMessage(msg, "Trainee ID is required.", false);
+        return;
+    }
+    try {
+        const result = await api.getTraineeById(traineeId);
+        if (lookupOutput) lookupOutput.textContent = JSON.stringify(result, null, 2);
+        showMessage(msg, `Loaded trainee ${traineeId}.`);
     } catch (err) {
         showMessage(msg, err.message, false);
     }

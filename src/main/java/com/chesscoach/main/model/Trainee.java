@@ -13,10 +13,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 @Entity
 @Table(
     name = "trainees",
@@ -59,8 +63,14 @@ public class Trainee extends AuditableEntity {
     @Column(name = "current_rating_mode", length = 10)
     private String currentRatingMode;
 
-    @Column(name = "highest_rating")
-    private Integer highestRating;
+    @Column(name = "highest_rapid_rating")
+    private Integer highestRapidRating;
+
+    @Column(name = "highest_blitz_rating")
+    private Integer highestBlitzRating;
+
+    @Column(name = "highest_bullet_rating")
+    private Integer highestBulletRating;
 
     @Column(name = "ranking")
     private Integer ranking;
@@ -80,132 +90,5 @@ public class Trainee extends AuditableEntity {
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Notification> notifications = new ArrayList<>();
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Coach getCoach() {
-        return coach;
-    }
-
-    public void setCoach(Coach coach) {
-        this.coach = coach;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getGradeLevel() {
-        return gradeLevel;
-    }
-
-    public void setGradeLevel(String gradeLevel) {
-        this.gradeLevel = gradeLevel;
-    }
-
-    public String getCourseStrand() {
-        return courseStrand;
-    }
-
-    public void setCourseStrand(String courseStrand) {
-        this.courseStrand = courseStrand;
-    }
-
-    public Integer getCurrentRating() {
-        return currentRating;
-    }
-
-    public void setCurrentRating(Integer currentRating) {
-        this.currentRating = currentRating;
-    }
-
-    public String getCurrentRatingMode() {
-        return currentRatingMode;
-    }
-
-    public void setCurrentRatingMode(String currentRatingMode) {
-        this.currentRatingMode = currentRatingMode;
-    }
-
-    public Integer getHighestRating() {
-        return highestRating;
-    }
-
-    public void setHighestRating(Integer highestRating) {
-        this.highestRating = highestRating;
-    }
-
-    public Integer getRanking() {
-        return ranking;
-    }
-
-    public void setRanking(Integer ranking) {
-        this.ranking = ranking;
-    }
-
-    public String getPhotoPath() {
-        return photoPath;
-    }
-
-    public void setPhotoPath(String photoPath) {
-        this.photoPath = photoPath;
-    }
-
-    public String getChessUsername() {
-        return chessUsername;
-    }
-
-    public void setChessUsername(String chessUsername) {
-        this.chessUsername = chessUsername;
-    }
-
-    public List<Attendance> getAttendanceRecords() {
-        return attendanceRecords;
-    }
-
-    public void setAttendanceRecords(List<Attendance> attendanceRecords) {
-        this.attendanceRecords = attendanceRecords;
-    }
-
-    public List<RatingsHistory> getRatingsHistory() {
-        return ratingsHistory;
-    }
-
-    public void setRatingsHistory(List<RatingsHistory> ratingsHistory) {
-        this.ratingsHistory = ratingsHistory;
-    }
-
-    public List<Notification> getNotifications() {
-        return notifications;
-    }
-
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
 }
 

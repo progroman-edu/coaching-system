@@ -1,6 +1,11 @@
 // This DTO defines a shared API data contract for ApiError.
 package com.chesscoach.main.dto.common;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class ApiError {
     private String code;
     private String detail;
@@ -13,20 +18,5 @@ public class ApiError {
         this.detail = detail;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getDetail() {
-        return detail;
-    }
-
-    public void setDetail(String detail) {
-        this.detail = detail;
-    }
 }
 

@@ -17,7 +17,7 @@ Spring Boot application for managing chess trainees, attendance, matches, analyt
 - Trainee management: CRUD, filtering, image upload
 - Attendance: record and date-range reports
 - Matches: create, Swiss pairing, Round Robin pairing, result recording
-- Rating system: ELO updates + rating history + ranking recomputation
+- Rating system: Chess.com mode sync, rating history, ranking recomputation
 - Analytics: dashboard, trainee performance, rating trend
 - Reports: CSV export, trainee CSV import, file download
 - Chess.com: ratings lookup, archives/history retrieval, trainee rating sync
@@ -129,7 +129,7 @@ From `src/main/resources/application.properties`:
 - `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`
 - `spring.jpa.hibernate.ddl-auto` (defaults to `validate`, override via `SPRING_JPA_HIBERNATE_DDL_AUTO`)
 - `spring.servlet.multipart.max-file-size=5MB`
-- `app.rating.k-factor=20`
+- `app.rating.default=1200`
 - `app.upload.base-dir` (default `uploads`)
 - `app.upload.trainee-photo-subdir` (default `trainee-photos`)
 - `app.report.export-dir` (default `uploads/reports`)
