@@ -5,13 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
-@Setter
-@Getter
 @MappedSuperclass
 public abstract class AuditableEntity {
 
@@ -33,5 +29,20 @@ public abstract class AuditableEntity {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
 

@@ -7,7 +7,6 @@ Note: `target/` files are build outputs and are intentionally excluded.
 
 - `README.md`: Main project documentation and setup guide.
 - `INTERNAL_FILE_DOCS.md`: This internal file map.
-- `feature-flows.md`: Plain-text request/response and sequence steps for all features.
 - `pom.xml`: Maven build config and dependencies.
 - `mvnw`: Maven wrapper launcher for Unix-like shells.
 - `mvnw.cmd`: Maven wrapper launcher for Windows.
@@ -25,14 +24,12 @@ Note: `target/` files are build outputs and are intentionally excluded.
 ## Config (`config`)
 
 - `src/main/java/com/chesscoach/main/config/ApiPaths.java`: Central API route constants.
-- `src/main/java/com/chesscoach/main/config/JacksonConfig.java`: Shared `ObjectMapper` bean configuration.
 - `src/main/java/com/chesscoach/main/config/StaticResourceConfig.java`: Maps `/uploads/**` to filesystem storage.
 
 ## Controllers (`controller`)
 
 - `src/main/java/com/chesscoach/main/controller/AnalyticsController.java`: Analytics endpoints.
 - `src/main/java/com/chesscoach/main/controller/AttendanceController.java`: Attendance endpoints.
-- `src/main/java/com/chesscoach/main/controller/ChessComController.java`: Chess.com integration endpoints.
 - `src/main/java/com/chesscoach/main/controller/MatchController.java`: Match/pairing/result endpoints.
 - `src/main/java/com/chesscoach/main/controller/ReportController.java`: Export/import/download report endpoints.
 - `src/main/java/com/chesscoach/main/controller/TraineeController.java`: Trainee CRUD and photo upload endpoints.
@@ -52,10 +49,6 @@ Note: `target/` files are build outputs and are intentionally excluded.
 ### Attendance
 - `src/main/java/com/chesscoach/main/dto/attendance/AttendanceRecordRequest.java`: Attendance record request payload.
 - `src/main/java/com/chesscoach/main/dto/attendance/AttendanceReportResponse.java`: Attendance report row payload.
-
-### Chess.com
-- `src/main/java/com/chesscoach/main/dto/chesscom/ChessComRatingResponse.java`: Normalized Chess.com ratings response.
-- `src/main/java/com/chesscoach/main/dto/chesscom/ChessComSyncRatingResponse.java`: Sync Chess.com rating response.
 
 ### Match
 - `src/main/java/com/chesscoach/main/dto/match/MatchCreateRequest.java`: Match creation payload.
@@ -109,7 +102,6 @@ Note: `target/` files are build outputs and are intentionally excluded.
 
 - `src/main/java/com/chesscoach/main/service/AnalyticsService.java`: Analytics business contract.
 - `src/main/java/com/chesscoach/main/service/AttendanceService.java`: Attendance business contract.
-- `src/main/java/com/chesscoach/main/service/ChessComService.java`: Chess.com integration contract.
 - `src/main/java/com/chesscoach/main/service/ImageStorageService.java`: Image storage contract.
 - `src/main/java/com/chesscoach/main/service/MatchService.java`: Matchmaking/result business contract.
 - `src/main/java/com/chesscoach/main/service/RatingService.java`: Rating update business contract.
@@ -120,7 +112,6 @@ Note: `target/` files are build outputs and are intentionally excluded.
 
 - `src/main/java/com/chesscoach/main/service/impl/AnalyticsServiceImpl.java`: Analytics calculations implementation.
 - `src/main/java/com/chesscoach/main/service/impl/AttendanceServiceImpl.java`: Attendance record/report implementation.
-- `src/main/java/com/chesscoach/main/service/impl/ChessComServiceImpl.java`: Chess.com PubAPI integration implementation.
 - `src/main/java/com/chesscoach/main/service/impl/LocalImageStorageServiceImpl.java`: Local disk image storage implementation.
 - `src/main/java/com/chesscoach/main/service/impl/MatchServiceImpl.java`: Match creation, pairing, and result flow implementation.
 - `src/main/java/com/chesscoach/main/service/impl/RatingServiceImpl.java`: ELO/ranking update implementation.
@@ -144,12 +135,9 @@ Note: `target/` files are build outputs and are intentionally excluded.
 - `src/main/resources/static/matches.html`: Matches page.
 - `src/main/resources/static/attendance.html`: Attendance page.
 - `src/main/resources/static/reports.html`: Reports page.
-- `src/main/resources/static/select.html`: Placeholder selection page.
-- `src/main/resources/static/favicon.ico`: App favicon.
 - `src/main/resources/static/css/styles.css`: Shared frontend styles.
 - `src/main/resources/static/js/api.js`: Shared API client using fetch.
 - `src/main/resources/static/js/ui.js`: Shared UI helper functions.
-- `src/main/resources/static/js/sidebar.js`: Sidebar toggle script.
 - `src/main/resources/static/js/analytics.js`: Dashboard page script.
 - `src/main/resources/static/js/trainees.js`: Trainee page script.
 - `src/main/resources/static/js/matches.js`: Matches page script.

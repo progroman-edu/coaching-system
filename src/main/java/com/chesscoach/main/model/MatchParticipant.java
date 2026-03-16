@@ -14,11 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.Getter;
-import lombok.Setter;
 
-@Setter
-@Getter
 @Entity
 @Table(
     name = "match_participants",
@@ -60,5 +56,68 @@ public class MatchParticipant extends AuditableEntity {
     @Column(name = "is_bye", nullable = false)
     private Boolean bye = Boolean.FALSE;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Match getMatch() {
+        return match;
+    }
+
+    public void setMatch(Match match) {
+        this.match = match;
+    }
+
+    public Trainee getTrainee() {
+        return trainee;
+    }
+
+    public void setTrainee(Trainee trainee) {
+        this.trainee = trainee;
+    }
+
+    public PieceColor getPieceColor() {
+        return pieceColor;
+    }
+
+    public void setPieceColor(PieceColor pieceColor) {
+        this.pieceColor = pieceColor;
+    }
+
+    public Integer getBoardNumber() {
+        return boardNumber;
+    }
+
+    public void setBoardNumber(Integer boardNumber) {
+        this.boardNumber = boardNumber;
+    }
+
+    public Integer getStartRating() {
+        return startRating;
+    }
+
+    public void setStartRating(Integer startRating) {
+        this.startRating = startRating;
+    }
+
+    public Double getPointsEarned() {
+        return pointsEarned;
+    }
+
+    public void setPointsEarned(Double pointsEarned) {
+        this.pointsEarned = pointsEarned;
+    }
+
+    public Boolean getBye() {
+        return bye;
+    }
+
+    public void setBye(Boolean bye) {
+        this.bye = bye;
+    }
 }
 

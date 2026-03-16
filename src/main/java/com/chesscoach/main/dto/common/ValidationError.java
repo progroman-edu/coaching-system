@@ -1,11 +1,6 @@
 // This DTO defines a shared API data contract for ValidationError.
 package com.chesscoach.main.dto.common;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Setter
-@Getter
 public class ValidationError {
     private String field;
     private String message;
@@ -18,5 +13,20 @@ public class ValidationError {
         this.message = message;
     }
 
+    public String getField() {
+        return field;
+    }
+
+    public void setField(String field) {
+        this.field = field;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }
 

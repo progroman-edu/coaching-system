@@ -52,18 +52,13 @@
         </section>
 
         <section class="panel">
-            <h3>Lookup Trainee</h3>
-            <form id="lookupForm" class="grid cols-2">
-                <div><label>Trainee ID</label><input type="number" name="traineeId" required></div>
-                <div><label>&nbsp;</label><button class="secondary" type="submit">Find Trainee</button></div>
-            </form>
-            <pre id="lookupOutput">{}</pre>
-        </section>
-
-        <section class="panel">
             <h3>Filter Trainees</h3>
             <form id="filterForm" class="grid cols-4">
                 <div><label>Rating Min</label><input type="number" name="ratingMin"></div>
+                <div><label>Rating Max</label><input type="number" name="ratingMax"></div>
+                <div><label>Age Min</label><input type="number" name="ageMin"></div>
+                <div><label>Age Max</label><input type="number" name="ageMax"></div>
+                <div><label>Course/Strand</label><input name="courseStrand"></div>
                 <div>
                     <label>Ranking Order</label>
                     <select name="rankingOrder">
@@ -79,6 +74,7 @@
                         <option value="bullet">Bullet</option>
                     </select>
                 </div>
+                <div><label>Page</label><input type="number" name="page" value="0"></div>
                 <div><label>Size</label><input type="number" name="size" value="20"></div>
                 <div style="display:flex; gap:8px; align-items:flex-end;">
                     <div style="flex:1;">
@@ -102,9 +98,7 @@
                     <th>Age</th>
                     <th>Course</th>
                     <th>Current Rating</th>
-                    <th>Highest Rapid</th>
-                    <th>Highest Blitz</th>
-                    <th>Highest Bullet</th>
+                    <th>Highest Rating</th>
                     <th>Mode</th>
                     <th>Rank</th>
                     <th>Chess.com</th>

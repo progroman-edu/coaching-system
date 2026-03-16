@@ -2,13 +2,9 @@
 package com.chesscoach.main.dto.attendance;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Setter
-@Getter
 public class AttendanceRecordRequest {
 
     @NotNull
@@ -22,5 +18,36 @@ public class AttendanceRecordRequest {
 
     private String remarks;
 
+    public Long getTraineeId() {
+        return traineeId;
+    }
+
+    public void setTraineeId(Long traineeId) {
+        this.traineeId = traineeId;
+    }
+
+    public LocalDate getAttendanceDate() {
+        return attendanceDate;
+    }
+
+    public void setAttendanceDate(LocalDate attendanceDate) {
+        this.attendanceDate = attendanceDate;
+    }
+
+    public Boolean getPresent() {
+        return present;
+    }
+
+    public void setPresent(Boolean present) {
+        this.present = present;
+    }
+
+    public String getRemarks() {
+        return remarks;
+    }
+
+    public void setRemarks(String remarks) {
+        this.remarks = remarks;
+    }
 }
 

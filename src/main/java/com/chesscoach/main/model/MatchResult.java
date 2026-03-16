@@ -14,13 +14,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
-@Setter
-@Getter
 @Entity
 @Table(
     name = "match_results",
@@ -65,5 +61,68 @@ public class MatchResult extends AuditableEntity {
     @Column(name = "played_at", nullable = false)
     private OffsetDateTime playedAt;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Match getMatch() {
+        return match;
+    }
+
+    public void setMatch(Match match) {
+        this.match = match;
+    }
+
+    public Trainee getWhiteTrainee() {
+        return whiteTrainee;
+    }
+
+    public void setWhiteTrainee(Trainee whiteTrainee) {
+        this.whiteTrainee = whiteTrainee;
+    }
+
+    public Trainee getBlackTrainee() {
+        return blackTrainee;
+    }
+
+    public void setBlackTrainee(Trainee blackTrainee) {
+        this.blackTrainee = blackTrainee;
+    }
+
+    public Double getWhiteScore() {
+        return whiteScore;
+    }
+
+    public void setWhiteScore(Double whiteScore) {
+        this.whiteScore = whiteScore;
+    }
+
+    public Double getBlackScore() {
+        return blackScore;
+    }
+
+    public void setBlackScore(Double blackScore) {
+        this.blackScore = blackScore;
+    }
+
+    public MatchResultType getResultType() {
+        return resultType;
+    }
+
+    public void setResultType(MatchResultType resultType) {
+        this.resultType = resultType;
+    }
+
+    public OffsetDateTime getPlayedAt() {
+        return playedAt;
+    }
+
+    public void setPlayedAt(OffsetDateTime playedAt) {
+        this.playedAt = playedAt;
+    }
 }
 

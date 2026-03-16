@@ -1,21 +1,9 @@
 // This service implementation contains business logic for Trainee operations.
 package com.chesscoach.main.service.impl;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
 import com.chesscoach.main.dto.trainee.TraineeRequest;
 import com.chesscoach.main.dto.trainee.TraineeResponse;
+import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
 import com.chesscoach.main.exception.ResourceNotFoundException;
 import com.chesscoach.main.model.Coach;
 import com.chesscoach.main.model.Trainee;
@@ -30,6 +18,17 @@ import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.ChessComService;
 import com.chesscoach.main.service.ImageStorageService;
 import com.chesscoach.main.service.TraineeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
@@ -94,14 +93,22 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional(readOnly = true)
     public List<TraineeResponse> list(
         Integer ratingMin,
+        Integer ratingMax,
+        Integer ageMin,
+        Integer ageMax,
+        String courseStrand,
         String rankingOrder,
+        Integer page,
         Integer size
     ) {
         Sort sort = resolveRankingSort(rankingOrder);
-        int resolvedSize = (size == null || size < 1) ? 20 : size;
         return traineeRepository.search(
             ratingMin,
-            PageRequest.of(0, resolvedSize, sort)
+            ratingMax,
+            ageMin,
+            ageMax,
+            courseStrand,
+            PageRequest.of(page, size, sort)
         ).map(this::toResponse).toList();
     }
 
@@ -182,9 +189,7 @@ public class TraineeServiceImpl implements TraineeService {
         String normalizedUsername = normalizeUsername(chessUsername);
         if (normalizedUsername == null) {
             trainee.setCurrentRating(defaultRating);
-            trainee.setHighestRapidRating(defaultRating);
-            trainee.setHighestBlitzRating(defaultRating);
-            trainee.setHighestBulletRating(defaultRating);
+            trainee.setHighestRating(defaultRating);
             trainee.setCurrentRatingMode("default");
             return;
         }
@@ -206,25 +211,8 @@ public class TraineeServiceImpl implements TraineeService {
             mode = "default";
         }
         trainee.setCurrentRating(current);
+        trainee.setHighestRating(current);
         trainee.setCurrentRatingMode(mode);
-        applyHighestByMode(trainee, mode, current);
-    }
-
-    private static void applyHighestByMode(Trainee trainee, String mode, int rating) {
-        switch (mode) {
-            case "rapid" -> trainee.setHighestRapidRating(maxValue(trainee.getHighestRapidRating(), rating));
-            case "blitz" -> trainee.setHighestBlitzRating(maxValue(trainee.getHighestBlitzRating(), rating));
-            case "bullet" -> trainee.setHighestBulletRating(maxValue(trainee.getHighestBulletRating(), rating));
-            default -> {
-                trainee.setHighestRapidRating(maxValue(trainee.getHighestRapidRating(), rating));
-                trainee.setHighestBlitzRating(maxValue(trainee.getHighestBlitzRating(), rating));
-                trainee.setHighestBulletRating(maxValue(trainee.getHighestBulletRating(), rating));
-            }
-        }
-    }
-
-    private static int maxValue(Integer current, int candidate) {
-        return current == null ? candidate : Math.max(current, candidate);
     }
 
     private static String normalizeUsername(String username) {
@@ -274,12 +262,11 @@ public class TraineeServiceImpl implements TraineeService {
         response.setCourseStrand(trainee.getCourseStrand());
         response.setCurrentRating(trainee.getCurrentRating());
         response.setCurrentRatingMode(trainee.getCurrentRatingMode());
-        response.setHighestRapidRating(trainee.getHighestRapidRating());
-        response.setHighestBlitzRating(trainee.getHighestBlitzRating());
-        response.setHighestBulletRating(trainee.getHighestBulletRating());
+        response.setHighestRating(trainee.getHighestRating());
         response.setRanking(trainee.getRanking());
         response.setPhotoPath(trainee.getPhotoPath());
         response.setChessUsername(trainee.getChessUsername());
         return response;
     }
 }
+
