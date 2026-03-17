@@ -36,7 +36,7 @@ public class ChessComServiceImpl implements ChessComService {
     private final RatingsHistoryRepository ratingsHistoryRepository;
     private final HttpClient httpClient = HttpClient.newBuilder().build();
 
-    @Value("${app.chesscom.base-url:https://api.chess.com/pub/player/}")
+    @Value("${app.chesscom.base-url:https://api.chess.com/pub}")
     private String baseUrl;
 
     @Value("${app.chesscom.user-agent:ChessCoachMain/1.0 (contact: coach@example.com)}")
@@ -57,7 +57,7 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     public ChessComRatingResponse getRatings(String username) {
-        JsonNode stats = fetchJson("/player/" + encode(username) + "/stats");
+        JsonNode stats = fetchJson("player/" + encode(username) + "/stats");
         ChessComRatingResponse response = new ChessComRatingResponse();
         response.setUsername(username);
         response.setRapid(getRating(stats, "chess_rapid"));
@@ -69,13 +69,13 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     public JsonNode getArchives(String username) {
-        return fetchJson("/player/" + encode(username) + "/games/archives");
+        return fetchJson("player/" + encode(username) + "/games/archives");
     }
 
     @Override
     public JsonNode getMonthlyGames(String username, int year, int month) {
         String paddedMonth = String.format("%02d", month);
-        return fetchJson("/player/" + encode(username) + "/games/" + year + "/" + paddedMonth);
+        return fetchJson("player/" + encode(username) + "/games/" + year + "/" + paddedMonth);
     }
 
     @Override
@@ -202,7 +202,9 @@ public class ChessComServiceImpl implements ChessComService {
     }
 
     private JsonNode fetchJson(String path) {
-        return fetchJsonUri(URI.create(baseUrl + path));
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+        return fetchJsonUri(URI.create(normalizedBaseUrl + "/" + normalizedPath));
     }
 
     private JsonNode fetchAbsoluteJson(String absoluteUrl) {

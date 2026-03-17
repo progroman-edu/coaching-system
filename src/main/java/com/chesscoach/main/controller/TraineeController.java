@@ -8,6 +8,7 @@ import com.chesscoach.main.dto.trainee.TraineeResponse;
 import com.chesscoach.main.service.TraineeService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,9 +29,14 @@ import java.util.List;
 public class TraineeController {
 
     private final TraineeService traineeService;
+    private final boolean allowResetTestData;
 
-    public TraineeController(TraineeService traineeService) {
+    public TraineeController(
+        TraineeService traineeService,
+        @Value("${app.maintenance.allow-reset-test-data:false}") boolean allowResetTestData
+    ) {
         this.traineeService = traineeService;
+        this.allowResetTestData = allowResetTestData;
     }
 
     @PostMapping
@@ -115,6 +121,9 @@ public class TraineeController {
         @RequestParam(defaultValue = "false") boolean confirm,
         HttpServletRequest request
     ) {
+        if (!allowResetTestData) {
+            throw new IllegalStateException("reset-test-data endpoint is disabled");
+        }
         if (!confirm) {
             throw new IllegalArgumentException("Set confirm=true to reset trainee test data");
         }
