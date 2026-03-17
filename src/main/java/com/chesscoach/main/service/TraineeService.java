@@ -11,11 +11,13 @@ public interface TraineeService {
     TraineeResponse create(TraineeRequest request);
 
     List<TraineeResponse> list(
+        String search,
         Integer ratingMin,
         Integer ratingMax,
         Integer ageMin,
         Integer ageMax,
         String courseStrand,
+        String mode,
         String rankingOrder,
         Integer page,
         Integer size

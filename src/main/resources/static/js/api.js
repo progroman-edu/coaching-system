@@ -31,7 +31,13 @@ export const api = {
         request(`/chesscom/trainees/${traineeId}/sync-rating?mode=${encodeURIComponent(mode)}`, { method: "POST" }),
 
     listTrainees: (params = {}) => {
-        const query = new URLSearchParams(params);
+        const query = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === "") {
+                return;
+            }
+            query.set(key, String(value));
+        });
         return request(`/trainees?${query.toString()}`);
     },
     createTrainee: (payload) => request("/trainees", { method: "POST", body: JSON.stringify(payload) }),

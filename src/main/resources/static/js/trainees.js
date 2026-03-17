@@ -1,4 +1,4 @@
-// This file powers trainee CRUD, filtering, and photo upload interactions.
+// This file powers trainee CRUD, filtering, dashboard table, and photo upload interactions.
 import { api } from "./api.js";
 import { clearMessage, escapeHtml, fillTableBody, showMessage } from "./ui.js";
 
@@ -11,19 +11,118 @@ const formTitle = document.getElementById("traineeFormTitle");
 const saveBtn = document.getElementById("saveTraineeBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 const syncRatingsBtn = document.getElementById("syncRatingsBtn");
+const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const syncModeSelect = document.getElementById("syncMode");
+const highestRatingFieldLabel = document.getElementById("highestRatingFieldLabel");
+const modePeakHeader = document.getElementById("modePeakHeader");
+const activeFilterChips = document.getElementById("activeFilterChips");
+const prevPageBtn = document.getElementById("prevPageBtn");
+const nextPageBtn = document.getElementById("nextPageBtn");
+const pageIndicator = document.getElementById("pageIndicator");
+const sortButtons = Array.from(document.querySelectorAll(".sort-btn"));
+
+const NOTE_STORAGE_KEY = "traineeCoachNotes";
 
 let editingId = null;
 let traineeCache = [];
-let lastFilterParams = { rankingOrder: "asc" };
+let hasNextPage = false;
+
+const tableState = {
+    sortKey: "ranking",
+    sortDir: "asc",
+    page: 0,
+    size: 20
+};
+
+function loadCoachNotes() {
+    try {
+        return JSON.parse(localStorage.getItem(NOTE_STORAGE_KEY) || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function saveCoachNotes(notes) {
+    localStorage.setItem(NOTE_STORAGE_KEY, JSON.stringify(notes));
+}
+
+function getSelectedMode() {
+    return (syncModeSelect?.value || "rapid").toLowerCase();
+}
+
+function modeLabel(mode) {
+    const normalizedMode = (mode || "").toLowerCase();
+    if (normalizedMode === "blitz") return "Blitz";
+    if (normalizedMode === "bullet") return "Bullet";
+    return "Rapid";
+}
+
+function getSelectedModeHighestRating(trainee) {
+    const mode = getSelectedMode();
+    if (mode === "blitz" && trainee?.highestBlitzRating != null) return trainee.highestBlitzRating;
+    if (mode === "bullet" && trainee?.highestBulletRating != null) return trainee.highestBulletRating;
+    if (mode === "rapid" && trainee?.highestRapidRating != null) return trainee.highestRapidRating;
+    return trainee?.highestRating ?? "";
+}
+
+function getRankBadgeClass(rank) {
+    if (rank === 1) return "rank-badge rank-1";
+    if (rank === 2) return "rank-badge rank-2";
+    if (rank === 3) return "rank-badge rank-3";
+    return "rank-badge";
+}
+
+function formatDelta(delta) {
+    const value = Number(delta ?? 0);
+    if (value > 0) return `<span class="delta-up">+${escapeHtml(value)}</span>`;
+    if (value < 0) return `<span class="delta-down">${escapeHtml(value)}</span>`;
+    return `<span class="delta-flat">0</span>`;
+}
+
+function formatAttendance(value) {
+    if (value == null) return "0%";
+    return `${Number(value).toFixed(1)}%`;
+}
+
+function formatLastActivity(value) {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString();
+}
+
+function initials(name) {
+    const value = String(name || "").trim();
+    if (!value) return "NA";
+    return value
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || "")
+        .join("") || "NA";
+}
+
+function updateModeAwareLabels() {
+    const label = modeLabel(getSelectedMode());
+    if (highestRatingFieldLabel) highestRatingFieldLabel.textContent = `Highest Rating (${label})`;
+    if (modePeakHeader) modePeakHeader.textContent = `Mode Peak (${label})`;
+}
+
+function updateSortButtonState() {
+    for (const btn of sortButtons) {
+        const isActive = btn.dataset.sort === tableState.sortKey;
+        btn.classList.toggle("active", isActive);
+    }
+}
 
 function resetEditMode() {
     editingId = null;
     form?.reset();
     if (form?.elements?.id) form.elements.id.value = "";
+    if (form?.elements?.highestRatingDisplay) form.elements.highestRatingDisplay.value = "";
     if (formTitle) formTitle.textContent = "Create Trainee";
     if (saveBtn) saveBtn.textContent = "Save Trainee";
     if (cancelEditBtn) cancelEditBtn.style.display = "none";
+    updateModeAwareLabels();
 }
 
 function startEdit(trainee) {
@@ -36,36 +135,130 @@ function startEdit(trainee) {
     form.elements.gradeLevel.value = trainee.gradeLevel ?? "";
     form.elements.courseStrand.value = trainee.courseStrand ?? "";
     form.elements.chessUsername.value = trainee.chessUsername ?? "";
+    form.elements.highestRatingDisplay.value = getSelectedModeHighestRating(trainee);
     if (formTitle) formTitle.textContent = `Edit Trainee #${editingId}`;
     if (saveBtn) saveBtn.textContent = "Update Trainee";
     if (cancelEditBtn) cancelEditBtn.style.display = "";
     form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-async function loadTrainees(params = {}) {
-    try {
-        const data = await api.listTrainees(params);
-        traineeCache = data;
-        lastFilterParams = params;
-        const rows = data.map((t, index) => `
+function getFilterParamsFromForm() {
+    const raw = Object.fromEntries(new FormData(filterForm).entries());
+    const params = {
+        search: raw.search?.trim() || undefined,
+        ratingMin: raw.ratingMin || undefined,
+        ratingMax: raw.ratingMax || undefined,
+        ageMin: raw.ageMin || undefined,
+        ageMax: raw.ageMax || undefined,
+        courseStrand: raw.courseStrand?.trim() || undefined,
+        mode: raw.mode && raw.mode !== "all" ? raw.mode : undefined,
+        rankingOrder: raw.rankingOrder || "asc",
+        page: tableState.page,
+        size: Number(raw.size || tableState.size)
+    };
+    tableState.size = Number(params.size);
+    return params;
+}
+
+function renderActiveFilterChips(params) {
+    const chips = [];
+    if (params.search) chips.push(`Search: ${params.search}`);
+    if (params.courseStrand) chips.push(`Course: ${params.courseStrand}`);
+    if (params.mode) chips.push(`Mode: ${params.mode}`);
+    if (params.ratingMin) chips.push(`Rating ≥ ${params.ratingMin}`);
+    if (params.ratingMax) chips.push(`Rating ≤ ${params.ratingMax}`);
+    if (params.ageMin) chips.push(`Age ≥ ${params.ageMin}`);
+    if (params.ageMax) chips.push(`Age ≤ ${params.ageMax}`);
+    chips.push(`Page Size: ${params.size}`);
+    activeFilterChips.innerHTML = chips.map((chip) => `<span class="filter-chip">${escapeHtml(chip)}</span>`).join("");
+}
+
+function compareValues(left, right, key) {
+    const leftValue = key === "modePeak" ? getSelectedModeHighestRating(left) : left?.[key];
+    const rightValue = key === "modePeak" ? getSelectedModeHighestRating(right) : right?.[key];
+    if (leftValue == null && rightValue == null) return 0;
+    if (leftValue == null) return 1;
+    if (rightValue == null) return -1;
+    if (typeof leftValue === "string" || typeof rightValue === "string") {
+        return String(leftValue).localeCompare(String(rightValue));
+    }
+    if (key === "lastActivityAt") {
+        return new Date(leftValue).getTime() - new Date(rightValue).getTime();
+    }
+    return Number(leftValue) - Number(rightValue);
+}
+
+function getSortedRows(rows) {
+    return [...rows].sort((a, b) => {
+        const result = compareValues(a, b, tableState.sortKey);
+        return tableState.sortDir === "asc" ? result : -result;
+    });
+}
+
+function renderTraineeTable() {
+    const notes = loadCoachNotes();
+    const rows = getSortedRows(traineeCache).map((t) => {
+        const rank = Number(t.ranking || 0);
+        const note = String(notes[t.id] || "").trim();
+        const photoPath = t.photoPath ? escapeHtml(t.photoPath) : "";
+        const avatar = photoPath
+            ? `<img class="trainee-avatar" src="${photoPath}" alt="${escapeHtml(t.name)}">`
+            : `<span class="trainee-avatar-fallback">${escapeHtml(initials(t.name))}</span>`;
+        return `
             <tr>
-                <td>${index + 1}</td>
-                <td>${escapeHtml(t.name ?? "")}</td>
-                <td>${escapeHtml(t.age ?? "")}</td>
-                <td>${escapeHtml(t.courseStrand ?? "")}</td>
-                <td>${escapeHtml(t.currentRating ?? "")}</td>
-                <td>${escapeHtml(t.highestRating ?? "")}</td>
-                <td>${escapeHtml(t.currentRatingMode ?? "")}</td>
-                <td>${escapeHtml(t.ranking ?? "")}</td>
-                <td>${escapeHtml(t.chessUsername ?? "")}</td>
-                <td>${escapeHtml(t.photoPath ?? "")}</td>
+                <td><span class="${getRankBadgeClass(rank)}">#${escapeHtml(rank || "-")}</span></td>
                 <td>
-                    <button data-edit="${Number(t.id)}" class="secondary">Edit</button>
-                    <button data-del="${Number(t.id)}" class="danger">Delete</button>
+                    <div class="trainee-id-cell">
+                        ${avatar}
+                        <div>
+                            <div class="trainee-name">${escapeHtml(t.name ?? "")}</div>
+                            <div class="trainee-meta">Age ${escapeHtml(t.age ?? "-")} • ${escapeHtml(t.gradeLevel ?? "-")}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="rating-main">${escapeHtml(t.currentRating ?? "")}</span>
+                    <span class="rating-sub">Peak ${escapeHtml(t.highestRating ?? "")}</span>
+                </td>
+                <td>${formatDelta(t.latestRatingChange)}</td>
+                <td>
+                    <span class="rating-main">${escapeHtml(getSelectedModeHighestRating(t) ?? "")}</span>
+                    <span class="rating-sub"><span class="mode-chip">${escapeHtml(modeLabel(getSelectedMode()))}</span></span>
+                </td>
+                <td>${escapeHtml(t.courseStrand ?? "")}</td>
+                <td>${escapeHtml(formatAttendance(t.attendancePercentageLast30Days))}</td>
+                <td>${escapeHtml(formatLastActivity(t.lastActivityAt))}</td>
+                <td>${escapeHtml(t.chessUsername ?? "N/A")}</td>
+                <td>${escapeHtml(note || "No notes")}</td>
+                <td>
+                    <div class="actions-inline">
+                        <button data-view="${Number(t.id)}" type="button">View</button>
+                        <button data-edit="${Number(t.id)}" class="secondary" type="button">Edit</button>
+                        <button data-note="${Number(t.id)}" class="secondary" type="button">Note</button>
+                        <button data-del="${Number(t.id)}" class="danger" type="button">Delete</button>
+                    </div>
                 </td>
             </tr>
-        `).join("");
-        fillTableBody(tbody, rows);
+        `;
+    }).join("");
+    fillTableBody(tbody, rows);
+}
+
+function updatePaginationUI() {
+    if (pageIndicator) pageIndicator.textContent = `Page ${tableState.page + 1}`;
+    if (prevPageBtn) prevPageBtn.disabled = tableState.page <= 0;
+    if (nextPageBtn) nextPageBtn.disabled = !hasNextPage;
+}
+
+async function loadTrainees() {
+    try {
+        const params = getFilterParamsFromForm();
+        renderActiveFilterChips(params);
+        const data = await api.listTrainees(params);
+        traineeCache = data;
+        hasNextPage = data.length === Number(params.size);
+        renderTraineeTable();
+        updatePaginationUI();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -76,6 +269,7 @@ form?.addEventListener("submit", async (e) => {
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(form).entries());
     delete payload.id;
+    delete payload.highestRatingDisplay;
     payload.age = Number(payload.age);
     try {
         if (editingId) {
@@ -86,7 +280,7 @@ form?.addEventListener("submit", async (e) => {
             showMessage(msg, "Trainee created.");
         }
         resetEditMode();
-        await loadTrainees(lastFilterParams);
+        await loadTrainees();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -94,11 +288,36 @@ form?.addEventListener("submit", async (e) => {
 
 filterForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const params = Object.fromEntries(new FormData(filterForm).entries());
-    await loadTrainees(params);
+    tableState.page = 0;
+    await loadTrainees();
 });
 
 tbody?.addEventListener("click", async (e) => {
+    const viewId = e.target?.dataset?.view;
+    if (viewId) {
+        const trainee = traineeCache.find((t) => Number(t.id) === Number(viewId));
+        if (!trainee) return;
+        showMessage(
+            msg,
+            `${trainee.name} • Rank #${trainee.ranking ?? "-"} • Current ${trainee.currentRating ?? "-"} • Last activity ${formatLastActivity(trainee.lastActivityAt)}`
+        );
+        return;
+    }
+
+    const noteId = e.target?.dataset?.note;
+    if (noteId) {
+        const trainee = traineeCache.find((t) => Number(t.id) === Number(noteId));
+        if (!trainee) return;
+        const notes = loadCoachNotes();
+        const current = notes[noteId] || "";
+        const nextValue = prompt(`Coach note for ${trainee.name}:`, current);
+        if (nextValue === null) return;
+        notes[noteId] = nextValue.trim();
+        saveCoachNotes(notes);
+        renderTraineeTable();
+        return;
+    }
+
     const editId = e.target?.dataset?.edit;
     if (editId) {
         const trainee = traineeCache.find((t) => Number(t.id) === Number(editId));
@@ -118,7 +337,7 @@ tbody?.addEventListener("click", async (e) => {
         if (editingId && Number(editingId) === Number(id)) {
             resetEditMode();
         }
-        await loadTrainees(lastFilterParams);
+        await loadTrainees();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -143,33 +362,67 @@ syncRatingsBtn?.addEventListener("click", async () => {
     const mode = syncModeSelect?.value || "rapid";
     let successCount = 0;
     const failures = [];
-    const modeCounts = { rapid: 0, blitz: 0, bullet: 0 };
     for (const trainee of targets) {
         try {
-            const result = await api.syncTraineeChessComRating(trainee.id, mode);
+            await api.syncTraineeChessComRating(trainee.id, mode);
             successCount += 1;
-            const resolvedMode = result?.mode;
-            if (resolvedMode && modeCounts[resolvedMode] !== undefined) {
-                modeCounts[resolvedMode] += 1;
-            }
         } catch (err) {
             failures.push(`${trainee.name ?? "Trainee"} (#${trainee.id}): ${err.message}`);
         }
     }
-    await loadTrainees(lastFilterParams);
-    const modeSummary = Object.entries(modeCounts)
-        .filter(([, count]) => count > 0)
-        .map(([key, count]) => `${key}: ${count}`)
-        .join(", ");
+    await loadTrainees();
     if (failures.length) {
-        showMessage(
-            msg,
-            `Synced ${successCount}/${targets.length} ratings (${modeSummary || mode}). Failures: ${failures.join(" | ")}`,
-            false
-        );
+        showMessage(msg, `Synced ${successCount}/${targets.length}. Failures: ${failures.join(" | ")}`, false);
         return;
     }
-    showMessage(msg, `Synced ${successCount}/${targets.length} Chess.com ratings (${modeSummary || mode}).`);
+    showMessage(msg, `Synced ${successCount}/${targets.length} Chess.com ratings.`);
+});
+
+syncModeSelect?.addEventListener("change", () => {
+    updateModeAwareLabels();
+    renderTraineeTable();
+    if (!editingId) return;
+    const trainee = traineeCache.find((t) => Number(t.id) === Number(editingId));
+    if (trainee && form?.elements?.highestRatingDisplay) {
+        form.elements.highestRatingDisplay.value = getSelectedModeHighestRating(trainee);
+    }
+});
+
+clearFiltersBtn?.addEventListener("click", async () => {
+    filterForm?.reset();
+    if (filterForm?.elements?.mode) filterForm.elements.mode.value = "all";
+    if (filterForm?.elements?.rankingOrder) filterForm.elements.rankingOrder.value = "asc";
+    if (filterForm?.elements?.size) filterForm.elements.size.value = "20";
+    tableState.page = 0;
+    tableState.size = 20;
+    await loadTrainees();
+});
+
+prevPageBtn?.addEventListener("click", async () => {
+    if (tableState.page <= 0) return;
+    tableState.page -= 1;
+    await loadTrainees();
+});
+
+nextPageBtn?.addEventListener("click", async () => {
+    if (!hasNextPage) return;
+    tableState.page += 1;
+    await loadTrainees();
+});
+
+sortButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        const clickedKey = button.dataset.sort;
+        if (!clickedKey) return;
+        if (tableState.sortKey === clickedKey) {
+            tableState.sortDir = tableState.sortDir === "asc" ? "desc" : "asc";
+        } else {
+            tableState.sortKey = clickedKey;
+            tableState.sortDir = clickedKey === "ranking" ? "asc" : "desc";
+        }
+        updateSortButtonState();
+        renderTraineeTable();
+    });
 });
 
 photoForm?.addEventListener("submit", async (e) => {
@@ -185,11 +438,12 @@ photoForm?.addEventListener("submit", async (e) => {
         await api.uploadTraineePhoto(traineeId, file);
         showMessage(msg, "Photo uploaded.");
         photoForm.reset();
-        await loadTrainees(lastFilterParams);
+        await loadTrainees();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
 });
 
-loadTrainees({ rankingOrder: "asc" });
-
+updateModeAwareLabels();
+updateSortButtonState();
+loadTrainees();

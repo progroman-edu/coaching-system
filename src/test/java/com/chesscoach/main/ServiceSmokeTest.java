@@ -178,8 +178,8 @@ class ServiceSmokeTest {
         createTrainee("Rank Two", "rank-two");
         createTrainee("Rank Three", "rank-three");
 
-        List<TraineeResponse> asc = traineeService.list(null, null, null, null, null, "asc", 0, 20);
-        List<TraineeResponse> desc = traineeService.list(null, null, null, null, null, "desc", 0, 20);
+        List<TraineeResponse> asc = traineeService.list(null, null, null, null, null, null, null, "asc", 0, 20);
+        List<TraineeResponse> desc = traineeService.list(null, null, null, null, null, null, null, "desc", 0, 20);
 
         assertThat(asc).isNotEmpty();
         assertThat(desc).isNotEmpty();

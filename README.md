@@ -92,6 +92,18 @@ $env:APP_DB_PASSWORD="pass123"
 .\mvnw spring-boot:run
 ```
 
+### If startup fails with missing `highest_*_rating` columns
+
+If you are running against an older `chess_coach_db` schema and see Hibernate validation errors like:
+`missing column [highest_blitz_rating] in table [trainees]`,
+run:
+
+```sql
+SOURCE src/main/resources/db/migrate_add_trainee_mode_rating_columns.sql;
+```
+
+Then restart the app.
+
 4. Open:
 
 - `http://localhost:8080`

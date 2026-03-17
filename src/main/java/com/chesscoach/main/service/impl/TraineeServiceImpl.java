@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -92,22 +94,26 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Transactional(readOnly = true)
     public List<TraineeResponse> list(
+        String search,
         Integer ratingMin,
         Integer ratingMax,
         Integer ageMin,
         Integer ageMax,
         String courseStrand,
+        String mode,
         String rankingOrder,
         Integer page,
         Integer size
     ) {
         Sort sort = resolveRankingSort(rankingOrder);
         return traineeRepository.search(
+            normalizeSearch(search),
             ratingMin,
             ratingMax,
             ageMin,
             ageMax,
             courseStrand,
+            normalizeMode(mode),
             PageRequest.of(page, size, sort)
         ).map(this::toResponse).toList();
     }
@@ -223,6 +229,28 @@ public class TraineeServiceImpl implements TraineeService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private static String normalizeSearch(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static String normalizeMode(String mode) {
+        if (mode == null) {
+            return null;
+        }
+        String normalized = mode.trim().toLowerCase();
+        if (normalized.isEmpty() || "all".equals(normalized)) {
+            return null;
+        }
+        return switch (normalized) {
+            case "rapid", "blitz", "bullet", "default" -> normalized;
+            default -> throw new IllegalArgumentException("mode must be one of: rapid, blitz, bullet, default, all");
+        };
+    }
+
     private static Sort resolveRankingSort(String rankingOrder) {
         String normalized = rankingOrder == null ? "asc" : rankingOrder.trim().toLowerCase();
         return switch (normalized) {
@@ -263,10 +291,50 @@ public class TraineeServiceImpl implements TraineeService {
         response.setCurrentRating(trainee.getCurrentRating());
         response.setCurrentRatingMode(trainee.getCurrentRatingMode());
         response.setHighestRating(trainee.getHighestRating());
+        response.setHighestRapidRating(trainee.getHighestRapidRating());
+        response.setHighestBlitzRating(trainee.getHighestBlitzRating());
+        response.setHighestBulletRating(trainee.getHighestBulletRating());
+        response.setLatestRatingChange(findLatestRatingChange(trainee.getId()));
+        response.setAttendancePercentageLast30Days(computeAttendancePercentageLast30Days(trainee.getId()));
+        response.setLastActivityAt(resolveLastActivityAt(trainee));
         response.setRanking(trainee.getRanking());
         response.setPhotoPath(trainee.getPhotoPath());
         response.setChessUsername(trainee.getChessUsername());
         return response;
+    }
+
+    private Integer findLatestRatingChange(Long traineeId) {
+        List<com.chesscoach.main.model.RatingsHistory> history = ratingsHistoryRepository.findByTraineeIdOrderByCreatedAtDesc(traineeId);
+        if (history.isEmpty()) {
+            return 0;
+        }
+        Integer change = history.getFirst().getRatingChange();
+        return change != null ? change : 0;
+    }
+
+    private Double computeAttendancePercentageLast30Days(Long traineeId) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(30);
+        List<com.chesscoach.main.model.Attendance> records =
+            attendanceRepository.findByTraineeIdAndAttendanceDateBetweenOrderByAttendanceDateAsc(traineeId, startDate, endDate);
+        if (records.isEmpty()) {
+            return 0.0;
+        }
+        long present = records.stream().filter(record -> Boolean.TRUE.equals(record.getPresent())).count();
+        return (present * 100.0) / records.size();
+    }
+
+    private OffsetDateTime resolveLastActivityAt(Trainee trainee) {
+        OffsetDateTime latest = trainee.getUpdatedAt();
+        List<com.chesscoach.main.model.MatchResult> results =
+            matchResultRepository.findByWhiteTraineeIdOrBlackTraineeIdOrderByPlayedAtDesc(trainee.getId(), trainee.getId());
+        if (!results.isEmpty()) {
+            OffsetDateTime playedAt = results.getFirst().getPlayedAt();
+            if (playedAt != null && (latest == null || playedAt.isAfter(latest))) {
+                latest = playedAt;
+            }
+        }
+        return latest;
     }
 }
 

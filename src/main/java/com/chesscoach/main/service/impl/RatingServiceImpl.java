@@ -41,8 +41,11 @@ public class RatingServiceImpl implements RatingService {
 
         white.setCurrentRating(whiteNew);
         black.setCurrentRating(blackNew);
-        white.setHighestRating(Math.max(whiteNew, safeHighest(white)));
-        black.setHighestRating(Math.max(blackNew, safeHighest(black)));
+
+        // Update mode-specific highest ratings
+        updateModeSpecificHighest(white, whiteNew, white.getCurrentRatingMode());
+        updateModeSpecificHighest(black, blackNew, black.getCurrentRatingMode());
+
         traineeRepository.save(white);
         traineeRepository.save(black);
 
@@ -59,6 +62,27 @@ public class RatingServiceImpl implements RatingService {
             trainee.setRanking(rank++);
         }
         traineeRepository.saveAll(leaderboard);
+    }
+
+    private void updateModeSpecificHighest(Trainee trainee, int newRating, String mode) {
+        if (mode == null) {
+            return;
+        }
+        switch (mode.toLowerCase()) {
+            case "rapid" -> trainee.setHighestRapidRating(
+                    Math.max(newRating, safeValue(trainee.getHighestRapidRating()))
+            );
+            case "blitz" -> trainee.setHighestBlitzRating(
+                    Math.max(newRating, safeValue(trainee.getHighestBlitzRating()))
+            );
+            case "bullet" -> trainee.setHighestBulletRating(
+                    Math.max(newRating, safeValue(trainee.getHighestBulletRating()))
+            );
+        }
+    }
+
+    private int safeValue(Integer val) {
+        return val != null ? val : 0;
     }
 
     private RatingsHistory buildRatingHistory(Trainee trainee, MatchResult result, int oldRating, int newRating) {

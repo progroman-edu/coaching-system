@@ -62,6 +62,15 @@ public class Trainee extends AuditableEntity {
     @Column(name = "highest_rating")
     private Integer highestRating;
 
+    @Column(name = "highest_rapid_rating")
+    private Integer highestRapidRating;
+
+    @Column(name = "highest_blitz_rating")
+    private Integer highestBlitzRating;
+
+    @Column(name = "highest_bullet_rating")
+    private Integer highestBulletRating;
+
     @Column(name = "ranking")
     private Integer ranking;
 
@@ -158,6 +167,42 @@ public class Trainee extends AuditableEntity {
 
     public void setHighestRating(Integer highestRating) {
         this.highestRating = highestRating;
+    }
+
+    public Integer getHighestRapidRating() {
+        return highestRapidRating;
+    }
+
+    public void setHighestRapidRating(Integer highestRapidRating) {
+        this.highestRapidRating = highestRapidRating;
+    }
+
+    public Integer getHighestBlitzRating() {
+        return highestBlitzRating;
+    }
+
+    public void setHighestBlitzRating(Integer highestBlitzRating) {
+        this.highestBlitzRating = highestBlitzRating;
+    }
+
+    public Integer getHighestBulletRating() {
+        return highestBulletRating;
+    }
+
+    public void setHighestBulletRating(Integer highestBulletRating) {
+        this.highestBulletRating = highestBulletRating;
+    }
+
+    public Integer getHighestRatingForMode(String mode) {
+        if (mode == null) {
+            return getCurrentRating();
+        }
+        return switch (mode.toLowerCase()) {
+            case "rapid" -> highestRapidRating != null ? highestRapidRating : getCurrentRating();
+            case "blitz" -> highestBlitzRating != null ? highestBlitzRating : getCurrentRating();
+            case "bullet" -> highestBulletRating != null ? highestBulletRating : getCurrentRating();
+            default -> getCurrentRating();
+        };
     }
 
     public Integer getRanking() {
