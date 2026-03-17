@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -57,9 +58,10 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     public ChessComRatingResponse getRatings(String username) {
-        JsonNode stats = fetchJson("player/" + encode(username) + "/stats");
+        String normalizedUsername = normalizeUsername(username);
+        JsonNode stats = fetchJson("player/" + encode(normalizedUsername) + "/stats");
         ChessComRatingResponse response = new ChessComRatingResponse();
-        response.setUsername(username);
+        response.setUsername(normalizedUsername);
         response.setRapid(getRating(stats, "chess_rapid"));
         response.setBlitz(getRating(stats, "chess_blitz"));
         response.setBullet(getRating(stats, "chess_bullet"));
@@ -69,13 +71,13 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     public JsonNode getArchives(String username) {
-        return fetchJson("player/" + encode(username) + "/games/archives");
+        return fetchJson("player/" + encode(normalizeUsername(username)) + "/games/archives");
     }
 
     @Override
     public JsonNode getMonthlyGames(String username, int year, int month) {
         String paddedMonth = String.format("%02d", month);
-        return fetchJson("player/" + encode(username) + "/games/" + year + "/" + paddedMonth);
+        return fetchJson("player/" + encode(normalizeUsername(username)) + "/games/" + year + "/" + paddedMonth);
     }
 
     @Override
@@ -204,6 +206,9 @@ public class ChessComServiceImpl implements ChessComService {
     private JsonNode fetchJson(String path) {
         String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+        if (normalizedBaseUrl.endsWith("/player") && normalizedPath.startsWith("player/")) {
+            normalizedPath = normalizedPath.substring("player/".length());
+        }
         return fetchJsonUri(URI.create(normalizedBaseUrl + "/" + normalizedPath));
     }
 
@@ -262,5 +267,19 @@ public class ChessComServiceImpl implements ChessComService {
 
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static String normalizeUsername(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("username is required");
+        }
+        String normalized = username.trim();
+        if (normalized.startsWith("@")) {
+            normalized = normalized.substring(1);
+        }
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("username is required");
+        }
+        return normalized.toLowerCase(Locale.ROOT);
     }
 }

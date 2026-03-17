@@ -104,6 +104,14 @@ SOURCE src/main/resources/db/migrate_add_trainee_mode_rating_columns.sql;
 
 Then restart the app.
 
+### If existing trainee usernames have uppercase letters
+
+Run:
+
+```sql
+SOURCE src/main/resources/db/migrate_lowercase_trainee_chess_usernames.sql;
+```
+
 4. Open:
 
 - `http://localhost:8080`
