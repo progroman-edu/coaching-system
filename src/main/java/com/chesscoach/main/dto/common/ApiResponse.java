@@ -1,9 +1,14 @@
 // This DTO defines response payload fields for Api endpoints.
 package com.chesscoach.main.dto.common;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
+@Setter
+@Getter
 public class ApiResponse<T> {
     private boolean success;
     private String message;
@@ -39,52 +44,5 @@ public class ApiResponse<T> {
         return response;
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    public List<ApiError> getErrors() {
-        return errors;
-    }
-
-    public void setErrors(List<ApiError> errors) {
-        this.errors = errors;
-    }
-
-    public OffsetDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(OffsetDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
 }
 
