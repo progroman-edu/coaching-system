@@ -62,7 +62,7 @@ function getSelectedModeHighestRating(trainee) {
     if (mode === "blitz" && trainee?.highestBlitzRating != null) return trainee.highestBlitzRating;
     if (mode === "bullet" && trainee?.highestBulletRating != null) return trainee.highestBulletRating;
     if (mode === "rapid" && trainee?.highestRapidRating != null) return trainee.highestRapidRating;
-    return trainee?.highestRating ?? "";
+    return trainee?.currentRating ?? "";
 }
 
 function getRankBadgeClass(rank) {
@@ -218,7 +218,7 @@ function renderTraineeTable() {
                 </td>
                 <td>
                     <span class="rating-main">${escapeHtml(t.currentRating ?? "")}</span>
-                    <span class="rating-sub">Peak ${escapeHtml(t.highestRating ?? "")}</span>
+                    <span class="rating-sub">Peak ${escapeHtml(getSelectedModeHighestRating(t) ?? "")}</span>
                 </td>
                 <td>${formatDelta(t.latestRatingChange)}</td>
                 <td>

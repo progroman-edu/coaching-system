@@ -8,6 +8,7 @@ const pairForm = document.getElementById("pairForm");
 const resultForm = document.getElementById("resultForm");
 const historyForm = document.getElementById("historyForm");
 const tbody = document.getElementById("matchRows");
+const ratingTbody = document.getElementById("ratingRows");
 const scheduleProfiles = document.getElementById("scheduleProfiles");
 const pairProfiles = document.getElementById("pairProfiles");
 const historyProfiles = document.getElementById("historyProfiles");
@@ -16,6 +17,9 @@ const pairSelectedCount = document.getElementById("pairSelectedCount");
 const historySelectedLabel = document.getElementById("historySelectedLabel");
 const loadingOverlay = document.getElementById("loadingOverlay");
 const resultMatchSelect = resultForm?.querySelector('select[name="matchRef"]');
+const scheduleDateInput = scheduleForm?.querySelector('input[name="scheduledDate"]');
+const historyModeButtons = document.querySelectorAll("#historyModeTabs [data-history-mode]");
+const historyModeInput = historyForm?.querySelector('input[name="historyMode"]');
 const scheduleSelectedIds = new Set();
 const pairSelectedIds = new Set();
 const traineesById = new Map();
@@ -27,6 +31,17 @@ function parseIds(idsText) {
         .split(",")
         .map((x) => Number(x.trim()))
         .filter((x) => Number.isFinite(x));
+}
+
+function toLocalIsoDate(date) {
+    const localTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localTime.toISOString().slice(0, 10);
+}
+
+function isFutureIsoDate(value) {
+    const dateText = String(value ?? "").trim();
+    if (!dateText) return false;
+    return dateText > toLocalIsoDate(new Date());
 }
 
 function initialsOf(name) {
@@ -122,6 +137,30 @@ function applyHistoryFilters(rows, filterDate, filterFormat) {
         }
         return true;
     });
+}
+
+function initHistoryModeTabs() {
+    historyModeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const mode = String(button.dataset.historyMode ?? "").trim().toUpperCase();
+            if (!mode) return;
+            if (historyModeInput) historyModeInput.value = mode;
+            historyModeButtons.forEach((item) => {
+                const isActive = item === button;
+                item.classList.toggle("active", isActive);
+                item.setAttribute("aria-selected", isActive ? "true" : "false");
+            });
+        });
+    });
+}
+
+function initScheduleDateInput() {
+    if (!scheduleDateInput) return;
+    const todayIso = toLocalIsoDate(new Date());
+    scheduleDateInput.setAttribute("max", todayIso);
+    if (!scheduleDateInput.value) {
+        scheduleDateInput.value = todayIso;
+    }
 }
 
 function refreshResultMatchOptions() {
@@ -252,6 +291,14 @@ function formatUnixDate(seconds) {
     return new Date(seconds * 1000).toISOString().slice(0, 10);
 }
 
+function formatDateTime(value) {
+    const date = new Date(String(value ?? ""));
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+    return date.toLocaleString();
+}
+
 function onlineOutcome(playerResult) {
     const value = String(playerResult ?? "").toLowerCase();
     const drawResults = new Set([
@@ -318,12 +365,31 @@ function renderOnlineMatches(data, username, filters = {}) {
     fillTableBody(tbody, rowHtml);
 }
 
+function renderRatingHistory(rows) {
+    const html = (rows ?? []).map((entry) => `
+        <tr>
+            <td>${escapeHtml(entry?.id ?? "")}</td>
+            <td>${escapeHtml(entry?.traineeId ?? "")}</td>
+            <td>${escapeHtml(entry?.matchHistoryId ?? "")}</td>
+            <td>${escapeHtml(entry?.oldRating ?? "")}</td>
+            <td>${escapeHtml(entry?.newRating ?? "")}</td>
+            <td>${escapeHtml(formatDateTime(entry?.createdAt))}</td>
+            <td>${escapeHtml(formatDateTime(entry?.updatedAt))}</td>
+        </tr>
+    `).join("");
+    fillTableBody(ratingTbody, html);
+}
+
 scheduleForm?.addEventListener("submit", async (e) => {
     // Create one scheduled match using selected participants.
     e.preventDefault();
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(scheduleForm).entries());
     payload.traineeIds = parseIds(payload.traineeIds);
+    if (isFutureIsoDate(payload.scheduledDate)) {
+        showMessage(msg, "Scheduled date cannot be in the future.", false);
+        return;
+    }
     if (payload.traineeIds.length === 0) {
         showMessage(msg, "Select at least one participant profile.", false);
         return;
@@ -342,20 +408,22 @@ pairForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(pairForm).entries());
+    const selectedFormat = String(payload.format ?? "SWISS");
     payload.roundNumber = Number(payload.roundNumber);
     payload.traineeIds = parseIds(payload.traineeIds);
+    delete payload.format;
     if (payload.traineeIds.length === 0) {
         showMessage(msg, "Select at least one participant profile.", false);
         return;
     }
     try {
         const data = await withLoading(() => (
-            payload.format === "SWISS"
+            selectedFormat === "SWISS"
                 ? api.generateSwiss(payload)
                 : api.generateRoundRobin(payload)
         ));
         renderMatches(data);
-        showMessage(msg, `${payload.format} pairings generated.`);
+        showMessage(msg, `${selectedFormat} pairings generated.`);
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -409,6 +477,7 @@ historyForm?.addEventListener("submit", async (e) => {
         return;
     }
     try {
+        const ratingHistoryPromise = api.getTraineeRatingHistory(traineeId);
         if (historyMode === "ONLINE") {
             const trainee = traineesById.get(traineeId);
             const username = trainee?.chessUsername;
@@ -416,13 +485,21 @@ historyForm?.addEventListener("submit", async (e) => {
                 showMessage(msg, "Selected trainee has no Chess.com username.", false);
                 return;
             }
-            const data = await withLoading(() => api.getChessComAllModeHistory(username, 6));
+            const [data, ratingHistory] = await withLoading(() => Promise.all([
+                api.getChessComAllModeHistory(username, 6),
+                ratingHistoryPromise
+            ]));
             renderOnlineMatches(data, username, filters);
+            renderRatingHistory(ratingHistory);
             showMessage(msg, `Loaded Chess.com history for ${username}.`);
             return;
         }
-        const data = await withLoading(() => api.getMatchHistory(traineeId));
+        const [data, ratingHistory] = await withLoading(() => Promise.all([
+            api.getMatchHistory(traineeId),
+            ratingHistoryPromise
+        ]));
         renderMatches(data, filters);
+        renderRatingHistory(ratingHistory);
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -439,5 +516,6 @@ resultMatchSelect?.addEventListener("change", () => {
 bindParticipantPicker(scheduleProfiles, scheduleForm, scheduleSelectedIds, scheduleSelectedCount);
 bindParticipantPicker(pairProfiles, pairForm, pairSelectedIds, pairSelectedCount);
 bindSingleParticipantPicker(historyProfiles, historyForm, historySelectedLabel);
+initHistoryModeTabs();
+initScheduleDateInput();
 loadParticipantProfiles();
-

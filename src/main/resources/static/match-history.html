@@ -1,0 +1,125 @@
+<!-- This file renders the match history page. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <title>Match History</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link active" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        <div class="panel">
+            <h1 class="title">Match History</h1>
+        </div>
+
+        <section class="panel">
+            <h3>Match History by Trainee</h3>
+            <form id="historyForm" class="grid cols-2">
+                <div style="grid-column:1 / -1;">
+                    <label>History Source</label>
+                    <div id="historyModeTabs" class="tab-strip compact" role="tablist" aria-label="History Mode">
+                        <button
+                            type="button"
+                            class="tab-btn active"
+                            role="tab"
+                            aria-selected="true"
+                            data-history-mode="OFFLINE">Offline (F2F)</button>
+                        <button
+                            type="button"
+                            class="tab-btn"
+                            role="tab"
+                            aria-selected="false"
+                            data-history-mode="ONLINE">Online (Chess.com)</button>
+                    </div>
+                    <input type="hidden" name="historyMode" value="OFFLINE">
+                </div>
+                <div>
+                    <label>Start Date Filter</label>
+                    <label>
+                        <input type="date" name="dateFilter">
+                    </label>
+                </div>
+                <div>
+                    <label>Format Filter</label>
+                    <label>
+                        <select name="formatFilter">
+                            <option value="ALL">All</option>
+                            <option value="SWISS">SWISS</option>
+                            <option value="ROUND_ROBIN">ROUND_ROBIN</option>
+                            <option value="RAPID">RAPID</option>
+                            <option value="BLITZ">BLITZ</option>
+                            <option value="BULLET">BULLET</option>
+                            <option value="DAILY">DAILY</option>
+                            <option value="OTHER">OTHER</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Trainee Profile</label>
+                    <div id="historyProfiles" class="participant-picker"></div>
+                    <div id="historySelectedLabel" class="participant-meta">Selected: none</div>
+                    <input type="hidden" name="traineeId" required>
+                </div>
+                <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Load History</button></div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <table>
+                <thead>
+                <tr>
+                    <th>Match Ref</th>
+                    <th>Date</th>
+                    <th>Format</th>
+                    <th>White</th>
+                    <th>Black</th>
+                    <th>Opening</th>
+                    <th>Result</th>
+                </tr>
+                </thead>
+                <tbody id="matchRows"></tbody>
+            </table>
+        </section>
+
+        <section class="panel">
+            <h3>Trainee Rating History</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Trainee ID</th>
+                    <th>Match History</th>
+                    <th>Old Rating</th>
+                    <th>New Rating</th>
+                    <th>Created At</th>
+                    <th>Updated At</th>
+                </tr>
+                </thead>
+                <tbody id="ratingRows"></tbody>
+            </table>
+        </section>
+    </main>
+</div>
+<div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Loading...</span>
+    </div>
+</div>
+<script type="module" src="/js/matches.js"></script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

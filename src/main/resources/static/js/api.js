@@ -19,12 +19,7 @@ async function request(path, options = {}) {
 
 export const api = {
     getDashboard: () => request("/analytics/dashboard"),
-    getPerformance: (traineeId) => request(`/analytics/performance/${traineeId}`),
     getRatingTrend: (traineeId) => request(`/analytics/rating-trend/${traineeId}`),
-    getChessComRatings: (username) => request(`/chesscom/${encodeURIComponent(username)}/rating`),
-    getChessComArchives: (username) => request(`/chesscom/${encodeURIComponent(username)}/match-history/archives`),
-    getChessComMonthlyGames: (username, year, month) =>
-        request(`/chesscom/${encodeURIComponent(username)}/match-history/${year}/${month}`),
     getChessComAllModeHistory: (username, limitArchives) =>
         request(`/chesscom/${encodeURIComponent(username)}/match-history/all-modes${limitArchives ? `?limitArchives=${encodeURIComponent(limitArchives)}` : ""}`),
     syncTraineeChessComRating: (traineeId, mode = "rapid") =>
@@ -60,6 +55,7 @@ export const api = {
     generateRoundRobin: (payload) => request("/matches/generate/round-robin", { method: "POST", body: JSON.stringify(payload) }),
     submitMatchResult: (payload) => request("/matches/result", { method: "POST", body: JSON.stringify(payload) }),
     getMatchHistory: (traineeId) => request(`/matches/history/${traineeId}`),
+    getTraineeRatingHistory: (traineeId) => request(`/matches/history/${traineeId}/ratings`),
 
     exportReport: (type, format) => {
         const params = new URLSearchParams({ type, format });

@@ -1,6 +1,7 @@
 // This service implementation contains business logic for Rating operations.
 package com.chesscoach.main.service.impl;
 
+import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
 import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.RatingsHistory;
 import com.chesscoach.main.model.Trainee;
@@ -55,6 +56,15 @@ public class RatingServiceImpl implements RatingService {
         recomputeRankings();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TraineeRatingHistoryResponse> getRatingHistoryByTrainee(Long traineeId) {
+        return ratingsHistoryRepository.findByTraineeIdOrderByCreatedAtDesc(traineeId)
+            .stream()
+            .map(this::toRatingHistoryResponse)
+            .toList();
+    }
+
     private void recomputeRankings() {
         List<Trainee> leaderboard = traineeRepository.findAllByOrderByCurrentRatingDescIdAsc();
         int rank = 1;
@@ -94,6 +104,18 @@ public class RatingServiceImpl implements RatingService {
         history.setRatingChange(newRating - oldRating);
         history.setNotes("ELO update with K=" + kFactor + " from match result #" + result.getId());
         return history;
+    }
+
+    private TraineeRatingHistoryResponse toRatingHistoryResponse(RatingsHistory history) {
+        TraineeRatingHistoryResponse response = new TraineeRatingHistoryResponse();
+        response.setId(history.getId());
+        response.setTraineeId(history.getTrainee().getId());
+        response.setMatchHistoryId(history.getMatchResult() != null ? history.getMatchResult().getId() : null);
+        response.setOldRating(history.getOldRating());
+        response.setNewRating(history.getNewRating());
+        response.setCreatedAt(history.getCreatedAt());
+        response.setUpdatedAt(history.getUpdatedAt());
+        return response;
     }
 
     private int safeHighest(Trainee trainee) {

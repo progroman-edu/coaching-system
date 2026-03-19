@@ -7,7 +7,9 @@ import com.chesscoach.main.dto.match.MatchCreateRequest;
 import com.chesscoach.main.dto.match.MatchGenerationRequest;
 import com.chesscoach.main.dto.match.MatchResultRequest;
 import com.chesscoach.main.dto.match.MatchSummaryResponse;
+import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
 import com.chesscoach.main.service.MatchService;
+import com.chesscoach.main.service.RatingService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,9 +28,11 @@ import java.util.List;
 public class MatchController {
 
     private final MatchService matchService;
+    private final RatingService ratingService;
 
-    public MatchController(MatchService matchService) {
+    public MatchController(MatchService matchService, RatingService ratingService) {
         this.matchService = matchService;
+        this.ratingService = ratingService;
     }
 
     @PostMapping
@@ -75,6 +79,15 @@ public class MatchController {
     ) {
         List<MatchSummaryResponse> data = matchService.getHistoryByTrainee(traineeId);
         return ResponseEntity.ok(ApiResponse.ok("Match history for trainee " + traineeId, data, request.getRequestURI()));
+    }
+
+    @GetMapping("/history/{traineeId}/ratings")
+    public ResponseEntity<ApiResponse<List<TraineeRatingHistoryResponse>>> getRatingHistoryByTrainee(
+        @PathVariable Long traineeId,
+        HttpServletRequest request
+    ) {
+        List<TraineeRatingHistoryResponse> data = ratingService.getRatingHistoryByTrainee(traineeId);
+        return ResponseEntity.ok(ApiResponse.ok("Rating history for trainee " + traineeId, data, request.getRequestURI()));
     }
 }
 
