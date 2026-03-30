@@ -15,7 +15,6 @@ const historyProfiles = document.getElementById("historyProfiles");
 const scheduleSelectedCount = document.getElementById("scheduleSelectedCount");
 const pairSelectedCount = document.getElementById("pairSelectedCount");
 const historySelectedLabel = document.getElementById("historySelectedLabel");
-const loadingOverlay = document.getElementById("loadingOverlay");
 const resultMatchSelect = resultForm?.querySelector('select[name="matchRef"]');
 const scheduleDateInput = scheduleForm?.querySelector('input[name="scheduledDate"]');
 const historyModeButtons = document.querySelectorAll("#historyModeTabs [data-history-mode]");
@@ -24,7 +23,6 @@ const scheduleSelectedIds = new Set();
 const pairSelectedIds = new Set();
 const traineesById = new Map();
 const offlineMatchesByRef = new Map();
-let loadingCount = 0;
 
 function parseIds(idsText) {
     return idsText
@@ -52,12 +50,7 @@ function initialsOf(name) {
 }
 
 function setLoading(active) {
-    // Keep a counter so overlapping async calls do not hide the loader too early.
-    if (!loadingOverlay) return;
-    loadingCount = Math.max(0, loadingCount + (active ? 1 : -1));
-    const busy = loadingCount > 0;
-    loadingOverlay.classList.toggle("active", busy);
-    loadingOverlay.setAttribute("aria-hidden", busy ? "false" : "true");
+    // Global loader is managed centrally in api.js.
 }
 
 async function withLoading(task) {

@@ -2,7 +2,10 @@
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
+import com.chesscoach.main.model.BlitzRating;
+import com.chesscoach.main.model.BulletRating;
 import com.chesscoach.main.model.MatchResult;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.RatingsHistory;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
@@ -35,17 +38,15 @@ public class RatingServiceImpl implements RatingService {
         Trainee white = matchResult.getWhiteTrainee();
         Trainee black = matchResult.getBlackTrainee();
 
-        int whiteOld = white.getCurrentRating();
-        int blackOld = black.getCurrentRating();
+        // Use rapid rating as the default for match calculations
+        int whiteOld = getRapidCurrentRating(white);
+        int blackOld = getRapidCurrentRating(black);
         int whiteNew = EloRatingCalculator.calculateNewRating(whiteOld, blackOld, matchResult.getWhiteScore(), kFactor);
         int blackNew = EloRatingCalculator.calculateNewRating(blackOld, whiteOld, matchResult.getBlackScore(), kFactor);
 
-        white.setCurrentRating(whiteNew);
-        black.setCurrentRating(blackNew);
-
-        // Update mode-specific highest ratings
-        updateModeSpecificHighest(white, whiteNew, white.getCurrentRatingMode());
-        updateModeSpecificHighest(black, blackNew, black.getCurrentRatingMode());
+        // Update rapid ratings
+        updateRapidRating(white, whiteNew);
+        updateRapidRating(black, blackNew);
 
         traineeRepository.save(white);
         traineeRepository.save(black);
@@ -54,6 +55,24 @@ public class RatingServiceImpl implements RatingService {
         ratingsHistoryRepository.save(buildRatingHistory(black, matchResult, blackOld, blackNew));
 
         recomputeRankings();
+    }
+
+    private int getRapidCurrentRating(Trainee trainee) {
+        RapidRating rapid = trainee.getRapidRating();
+        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : 1200;
+    }
+
+    private void updateRapidRating(Trainee trainee, int newRating) {
+        RapidRating rapid = trainee.getRapidRating();
+        if (rapid == null) {
+            rapid = new RapidRating();
+            rapid.setTrainee(trainee);
+            trainee.setRapidRating(rapid);
+        }
+        rapid.setCurrentRating(newRating);
+        if (rapid.getHighestRating() == null || newRating > rapid.getHighestRating()) {
+            rapid.setHighestRating(newRating);
+        }
     }
 
     @Override
@@ -66,33 +85,20 @@ public class RatingServiceImpl implements RatingService {
     }
 
     private void recomputeRankings() {
-        List<Trainee> leaderboard = traineeRepository.findAllByOrderByCurrentRatingDescIdAsc();
+        List<Trainee> trainees = traineeRepository.findAll();
+        trainees.sort((a, b) -> {
+            int ratingA = getRapidCurrentRating(a);
+            int ratingB = getRapidCurrentRating(b);
+            if (ratingA != ratingB) {
+                return Integer.compare(ratingB, ratingA); // descending
+            }
+            return Long.compare(a.getId(), b.getId()); // ascending by id
+        });
         int rank = 1;
-        for (Trainee trainee : leaderboard) {
+        for (Trainee trainee : trainees) {
             trainee.setRanking(rank++);
         }
-        traineeRepository.saveAll(leaderboard);
-    }
-
-    private void updateModeSpecificHighest(Trainee trainee, int newRating, String mode) {
-        if (mode == null) {
-            return;
-        }
-        switch (mode.toLowerCase()) {
-            case "rapid" -> trainee.setHighestRapidRating(
-                    Math.max(newRating, safeValue(trainee.getHighestRapidRating()))
-            );
-            case "blitz" -> trainee.setHighestBlitzRating(
-                    Math.max(newRating, safeValue(trainee.getHighestBlitzRating()))
-            );
-            case "bullet" -> trainee.setHighestBulletRating(
-                    Math.max(newRating, safeValue(trainee.getHighestBulletRating()))
-            );
-        }
-    }
-
-    private int safeValue(Integer val) {
-        return val != null ? val : 0;
+        traineeRepository.saveAll(trainees);
     }
 
     private RatingsHistory buildRatingHistory(Trainee trainee, MatchResult result, int oldRating, int newRating) {
@@ -116,10 +122,6 @@ public class RatingServiceImpl implements RatingService {
         response.setCreatedAt(history.getCreatedAt());
         response.setUpdatedAt(history.getUpdatedAt());
         return response;
-    }
-
-    private int safeHighest(Trainee trainee) {
-        return trainee.getHighestRating() != null ? trainee.getHighestRating() : trainee.getCurrentRating();
     }
 }
 

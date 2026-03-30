@@ -13,7 +13,6 @@ const cancelEditBtn = document.getElementById("cancelEditBtn");
 const syncRatingsBtn = document.getElementById("syncRatingsBtn");
 const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const syncModeSelect = document.getElementById("syncMode");
-const highestRatingFieldLabel = document.getElementById("highestRatingFieldLabel");
 const modePeakHeader = document.getElementById("modePeakHeader");
 const activeFilterChips = document.getElementById("activeFilterChips");
 const prevPageBtn = document.getElementById("prevPageBtn");
@@ -103,7 +102,6 @@ function initials(name) {
 
 function updateModeAwareLabels() {
     const label = modeLabel(getSelectedMode());
-    if (highestRatingFieldLabel) highestRatingFieldLabel.textContent = `Highest Rating (${label})`;
     if (modePeakHeader) modePeakHeader.textContent = `Mode Peak (${label})`;
 }
 
@@ -118,7 +116,6 @@ function resetEditMode() {
     editingId = null;
     form?.reset();
     if (form?.elements?.id) form.elements.id.value = "";
-    if (form?.elements?.highestRatingDisplay) form.elements.highestRatingDisplay.value = "";
     if (formTitle) formTitle.textContent = "Create Trainee";
     if (saveBtn) saveBtn.textContent = "Save Trainee";
     if (cancelEditBtn) cancelEditBtn.style.display = "none";
@@ -133,9 +130,8 @@ function startEdit(trainee) {
     form.elements.age.value = trainee.age ?? "";
     form.elements.address.value = trainee.address ?? "";
     form.elements.gradeLevel.value = trainee.gradeLevel ?? "";
-    form.elements.courseStrand.value = trainee.courseStrand ?? "";
+    form.elements.department.value = trainee.department ?? "";
     form.elements.chessUsername.value = trainee.chessUsername ?? "";
-    form.elements.highestRatingDisplay.value = getSelectedModeHighestRating(trainee);
     if (formTitle) formTitle.textContent = `Edit Trainee #${editingId}`;
     if (saveBtn) saveBtn.textContent = "Update Trainee";
     if (cancelEditBtn) cancelEditBtn.style.display = "";
@@ -147,11 +143,7 @@ function getFilterParamsFromForm() {
     const params = {
         search: raw.search?.trim() || undefined,
         ratingMin: raw.ratingMin || undefined,
-        ratingMax: raw.ratingMax || undefined,
-        ageMin: raw.ageMin || undefined,
-        ageMax: raw.ageMax || undefined,
-        courseStrand: raw.courseStrand?.trim() || undefined,
-        mode: raw.mode && raw.mode !== "all" ? raw.mode : undefined,
+        department: raw.department?.trim() || undefined,
         rankingOrder: raw.rankingOrder || "asc",
         page: tableState.page,
         size: Number(raw.size || tableState.size)
@@ -163,12 +155,8 @@ function getFilterParamsFromForm() {
 function renderActiveFilterChips(params) {
     const chips = [];
     if (params.search) chips.push(`Search: ${params.search}`);
-    if (params.courseStrand) chips.push(`Course: ${params.courseStrand}`);
-    if (params.mode) chips.push(`Mode: ${params.mode}`);
+    if (params.department) chips.push(`Department: ${params.department}`);
     if (params.ratingMin) chips.push(`Rating ≥ ${params.ratingMin}`);
-    if (params.ratingMax) chips.push(`Rating ≤ ${params.ratingMax}`);
-    if (params.ageMin) chips.push(`Age ≥ ${params.ageMin}`);
-    if (params.ageMax) chips.push(`Age ≤ ${params.ageMax}`);
     chips.push(`Page Size: ${params.size}`);
     activeFilterChips.innerHTML = chips.map((chip) => `<span class="filter-chip">${escapeHtml(chip)}</span>`).join("");
 }
@@ -225,7 +213,7 @@ function renderTraineeTable() {
                     <span class="rating-main">${escapeHtml(getSelectedModeHighestRating(t) ?? "")}</span>
                     <span class="rating-sub"><span class="mode-chip">${escapeHtml(modeLabel(getSelectedMode()))}</span></span>
                 </td>
-                <td>${escapeHtml(t.courseStrand ?? "")}</td>
+                <td>${escapeHtml(t.department ?? "")}</td>
                 <td>${escapeHtml(formatAttendance(t.attendancePercentageLast30Days))}</td>
                 <td>${escapeHtml(formatLastActivity(t.lastActivityAt))}</td>
                 <td>${escapeHtml(t.chessUsername ?? "N/A")}</td>
@@ -269,7 +257,6 @@ form?.addEventListener("submit", async (e) => {
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(form).entries());
     delete payload.id;
-    delete payload.highestRatingDisplay;
     payload.age = Number(payload.age);
     try {
         if (editingId) {
@@ -381,16 +368,10 @@ syncRatingsBtn?.addEventListener("click", async () => {
 syncModeSelect?.addEventListener("change", () => {
     updateModeAwareLabels();
     renderTraineeTable();
-    if (!editingId) return;
-    const trainee = traineeCache.find((t) => Number(t.id) === Number(editingId));
-    if (trainee && form?.elements?.highestRatingDisplay) {
-        form.elements.highestRatingDisplay.value = getSelectedModeHighestRating(trainee);
-    }
 });
 
 clearFiltersBtn?.addEventListener("click", async () => {
     filterForm?.reset();
-    if (filterForm?.elements?.mode) filterForm.elements.mode.value = "all";
     if (filterForm?.elements?.rankingOrder) filterForm.elements.rankingOrder.value = "asc";
     if (filterForm?.elements?.size) filterForm.elements.size.value = "20";
     tableState.page = 0;

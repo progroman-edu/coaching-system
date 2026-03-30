@@ -19,13 +19,7 @@ CREATE TABLE IF NOT EXISTS trainees (
     age INT NOT NULL,
     address VARCHAR(255) NOT NULL,
     grade_level VARCHAR(50) NOT NULL,
-    course_strand VARCHAR(100) NOT NULL,
-    current_rating INT NOT NULL,
-    current_rating_mode VARCHAR(10),
-    highest_rating INT,
-    highest_rapid_rating INT,
-    highest_blitz_rating INT,
-    highest_bullet_rating INT,
+    department VARCHAR(100) NOT NULL,
     ranking INT,
     photo_path VARCHAR(255),
     chess_username VARCHAR(80),
@@ -35,10 +29,39 @@ CREATE TABLE IF NOT EXISTS trainees (
 );
 
 CREATE INDEX idx_trainee_name ON trainees(name);
-CREATE INDEX idx_trainee_current_rating ON trainees(current_rating);
 CREATE INDEX idx_trainee_age ON trainees(age);
-CREATE INDEX idx_trainee_course_strand ON trainees(course_strand);
+CREATE INDEX idx_trainee_department ON trainees(department);
 CREATE INDEX idx_trainee_chess_username ON trainees(chess_username);
+
+CREATE TABLE IF NOT EXISTS blitz_rating (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    trainee_id BIGINT NOT NULL UNIQUE,
+    current_rating INT,
+    highest_rating INT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_blitz_rating_trainee FOREIGN KEY (trainee_id) REFERENCES trainees (id)
+);
+
+CREATE TABLE IF NOT EXISTS bullet_rating (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    trainee_id BIGINT NOT NULL UNIQUE,
+    current_rating INT,
+    highest_rating INT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_bullet_rating_trainee FOREIGN KEY (trainee_id) REFERENCES trainees (id)
+);
+
+CREATE TABLE IF NOT EXISTS rapid_rating (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    trainee_id BIGINT NOT NULL UNIQUE,
+    current_rating INT,
+    highest_rating INT,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_rapid_rating_trainee FOREIGN KEY (trainee_id) REFERENCES trainees (id)
+);
 
 CREATE TABLE IF NOT EXISTS attendance (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

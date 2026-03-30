@@ -32,7 +32,7 @@ public class TraineeRequest {
 
     @NotBlank
     @Size(max = 100)
-    private String courseStrand;
+    private String department;
 
     private Integer ranking;
 

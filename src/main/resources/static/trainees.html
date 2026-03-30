@@ -35,12 +35,15 @@
                 <div><label>Age</label><input type="number" name="age" required></div>
                 <div><label>Address</label><input name="address" required></div>
                 <div><label>Grade Level</label><input name="gradeLevel" required></div>
-                <div><label>Course/Strand</label><input name="courseStrand" required></div>
-                <div><label>Chess.com Username</label><input name="chessUsername" placeholder="e.g. hikaru" required></div>
                 <div>
-                    <label id="highestRatingFieldLabel">Highest Rating (Rapid)</label>
-                    <input type="number" name="highestRatingDisplay" readonly>
+                    <label>Department</label>
+                    <select name="department" required>
+                        <option value="">-- Select --</option>
+                        <option value="High School">High School</option>
+                        <option value="College">College</option>
+                    </select>
                 </div>
+                <div><label>Chess.com Username</label><input name="chessUsername" placeholder="e.g. hikaru" required></div>
                 <div style="grid-column:1 / -1; display:flex; gap:8px;">
                     <button id="saveTraineeBtn" type="submit">Save Trainee</button>
                     <button id="cancelEditBtn" type="button" class="secondary" style="display:none;">Cancel Edit</button>
@@ -55,21 +58,15 @@
                     <label>Search</label>
                     <input type="search" name="search" placeholder="Search by trainee name">
                 </div>
-                <div><label>Course/Strand</label><input name="courseStrand"></div>
                 <div>
-                    <label>Mode Filter</label>
-                    <select name="mode">
-                        <option value="all" selected>All</option>
-                        <option value="rapid">Rapid</option>
-                        <option value="blitz">Blitz</option>
-                        <option value="bullet">Bullet</option>
-                        <option value="default">Default</option>
+                    <label>Department</label>
+                    <select name="department">
+                        <option value="">All</option>
+                        <option value="High School">High School</option>
+                        <option value="College">College</option>
                     </select>
                 </div>
                 <div><label>Rating Min</label><input type="number" name="ratingMin"></div>
-                <div><label>Rating Max</label><input type="number" name="ratingMax"></div>
-                <div><label>Age Min</label><input type="number" name="ageMin"></div>
-                <div><label>Age Max</label><input type="number" name="ageMax"></div>
                 <div>
                     <label>Rank Order</label>
                     <select name="rankingOrder">
@@ -124,7 +121,7 @@
                         <th><button type="button" class="sort-btn" data-sort="currentRating">Current / Peak</button></th>
                         <th><button type="button" class="sort-btn" data-sort="latestRatingChange">Δ Latest</button></th>
                         <th><button id="modePeakHeader" type="button" class="sort-btn" data-sort="modePeak">Mode Peak (Rapid)</button></th>
-                        <th><button type="button" class="sort-btn" data-sort="courseStrand">Course</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="department">Department</button></th>
                         <th><button type="button" class="sort-btn" data-sort="attendancePercentageLast30Days">Attendance (30d)</button></th>
                         <th><button type="button" class="sort-btn" data-sort="lastActivityAt">Last Activity</button></th>
                         <th>Chess.com</th>

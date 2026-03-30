@@ -128,6 +128,7 @@ Note: `target/` files are build outputs and are intentionally excluded.
 
 - `src/main/resources/application.properties`: Runtime app configuration.
 - `src/main/resources/db/schema-chess_coach_db.sql`: SQL schema reference script.
+- `src/main/resources/db/migrate_rename_course_strand_to_department.sql`: Renames legacy `course_strand` to `department`.
 
 ### Static Frontend
 - `src/main/resources/static/index.html`: Dashboard page.

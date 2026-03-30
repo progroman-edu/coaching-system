@@ -14,6 +14,7 @@ import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.MatchResultType;
 import com.chesscoach.main.model.MatchStatus;
 import com.chesscoach.main.model.PieceColor;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.MatchParticipantRepository;
 import com.chesscoach.main.repository.MatchRepository;
@@ -23,6 +24,7 @@ import com.chesscoach.main.service.MatchService;
 import com.chesscoach.main.service.RatingService;
 import com.chesscoach.main.util.RoundRobinGenerator;
 import com.chesscoach.main.util.SwissPairingGenerator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,9 @@ public class MatchServiceImpl implements MatchService {
     private final TraineeRepository traineeRepository;
     private final RatingService ratingService;
 
+    @Value("${app.rating.default:1200}")
+    private int defaultRating;
+
     public MatchServiceImpl(
         MatchRepository matchRepository,
         MatchParticipantRepository matchParticipantRepository,
@@ -56,6 +61,11 @@ public class MatchServiceImpl implements MatchService {
         this.matchResultRepository = matchResultRepository;
         this.traineeRepository = traineeRepository;
         this.ratingService = ratingService;
+    }
+
+    private int getRapidCurrentRating(Trainee trainee) {
+        RapidRating rapid = trainee.getRapidRating();
+        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
     }
 
     @Override
@@ -80,7 +90,7 @@ public class MatchServiceImpl implements MatchService {
     public List<MatchSummaryResponse> generateSwiss(MatchGenerationRequest request) {
         List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
         List<Long> sortedIds = trainees.stream()
-            .sorted(Comparator.comparing(Trainee::getCurrentRating).reversed())
+            .sorted(Comparator.comparing(this::getRapidCurrentRating).reversed())
             .map(Trainee::getId)
             .toList();
 
@@ -212,7 +222,7 @@ public class MatchServiceImpl implements MatchService {
         participant.setTrainee(trainee);
         participant.setPieceColor(color);
         participant.setBoardNumber(boardNumber);
-        participant.setStartRating(trainee.getCurrentRating());
+        participant.setStartRating(getRapidCurrentRating(trainee));
         participant.setPointsEarned(bye ? 1.0 : 0.0);
         participant.setBye(bye);
         return participant;

@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface TraineeRepository extends JpaRepository<Trainee, Long> {
@@ -16,28 +15,19 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
     @Query("""
         SELECT t
         FROM Trainee t
+        LEFT JOIN t.rapidRating r
         WHERE (:search IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')))
-          AND (:ratingMin IS NULL OR t.currentRating >= :ratingMin)
-          AND (:ratingMax IS NULL OR t.currentRating <= :ratingMax)
-          AND (:ageMin IS NULL OR t.age >= :ageMin)
-          AND (:ageMax IS NULL OR t.age <= :ageMax)
-          AND (:courseStrand IS NULL OR LOWER(t.courseStrand) LIKE LOWER(CONCAT('%', :courseStrand, '%')))
-          AND (:mode IS NULL OR LOWER(t.currentRatingMode) = LOWER(:mode))
+          AND (:ratingMin IS NULL OR r.currentRating >= :ratingMin)
+          AND (:department IS NULL OR LOWER(t.department) LIKE LOWER(CONCAT('%', :department, '%')))
     """)
     Page<Trainee> search(
         @Param("search") String search,
         @Param("ratingMin") Integer ratingMin,
-        @Param("ratingMax") Integer ratingMax,
-        @Param("ageMin") Integer ageMin,
-        @Param("ageMax") Integer ageMax,
-        @Param("courseStrand") String courseStrand,
-        @Param("mode") String mode,
+        @Param("department") String department,
         Pageable pageable
     );
 
     Optional<Trainee> findByNameIgnoreCaseAndCoachId(String name, Long coachId);
-
-    List<Trainee> findAllByOrderByCurrentRatingDescIdAsc();
 
     Optional<Trainee> findByChessUsernameIgnoreCase(String chessUsername);
 }

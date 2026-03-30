@@ -8,6 +8,7 @@ import com.chesscoach.main.exception.ResourceNotFoundException;
 import com.chesscoach.main.model.Attendance;
 import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.MatchResultType;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.RatingsHistory;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.AttendanceRepository;
@@ -15,6 +16,7 @@ import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.AnalyticsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final MatchResultRepository matchResultRepository;
     private final RatingsHistoryRepository ratingsHistoryRepository;
 
+    @Value("${app.rating.default:1200}")
+    private int defaultRating;
+
     public AnalyticsServiceImpl(
         TraineeRepository traineeRepository,
         AttendanceRepository attendanceRepository,
@@ -41,6 +46,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         this.ratingsHistoryRepository = ratingsHistoryRepository;
     }
 
+    private int getRapidCurrentRating(Trainee trainee) {
+        RapidRating rapid = trainee.getRapidRating();
+        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
+    }
+
+    private int getRapidHighestRating(Trainee trainee) {
+        RapidRating rapid = trainee.getRapidRating();
+        return rapid != null && rapid.getHighestRating() != null ? rapid.getHighestRating() : defaultRating;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public DashboardAnalyticsResponse getDashboard() {
@@ -49,7 +64,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         double averageRating = trainees.isEmpty()
             ? 0.0
-            : trainees.stream().mapToInt(Trainee::getCurrentRating).average().orElse(0.0);
+            : trainees.stream().mapToInt(this::getRapidCurrentRating).average().orElse(0.0);
         long presentCount = attendance.stream().filter(a -> Boolean.TRUE.equals(a.getPresent())).count();
         double attendancePercentage = attendance.isEmpty() ? 0.0 : (presentCount * 100.0) / attendance.size();
 
@@ -99,14 +114,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         long presentCount = attendance.stream().filter(a -> Boolean.TRUE.equals(a.getPresent())).count();
         double attendancePercentage = attendance.isEmpty() ? 0.0 : (presentCount * 100.0) / attendance.size();
+        int currentRating = getRapidCurrentRating(trainee);
         int highest = history.isEmpty()
-            ? (trainee.getHighestRating() != null ? trainee.getHighestRating() : trainee.getCurrentRating())
-            : history.stream().mapToInt(RatingsHistory::getNewRating).max().orElse(trainee.getCurrentRating());
+            ? getRapidHighestRating(trainee)
+            : history.stream().mapToInt(RatingsHistory::getNewRating).max().orElse(currentRating);
 
         TraineePerformanceResponse response = new TraineePerformanceResponse();
         response.setTraineeId(trainee.getId());
         response.setTraineeName(trainee.getName());
-        response.setCurrentRating(trainee.getCurrentRating());
+        response.setCurrentRating(currentRating);
         response.setHighestRating(highest);
         response.setMatchesPlayed(results.size());
         response.setWins(wins);

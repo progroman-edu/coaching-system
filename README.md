@@ -104,6 +104,17 @@ SOURCE src/main/resources/db/migrate_add_trainee_mode_rating_columns.sql;
 
 Then restart the app.
 
+### If startup fails with missing `department` column
+
+If you are running against an older `chess_coach_db` schema that still uses `course_strand`,
+run:
+
+```sql
+SOURCE src/main/resources/db/migrate_rename_course_strand_to_department.sql;
+```
+
+Then restart the app.
+
 ### If existing trainee usernames have uppercase letters
 
 Run:
@@ -175,3 +186,4 @@ From `src/main/resources/application.properties`:
 - `src/main/java/com/chesscoach/main/model`: JPA entities/enums
 - `src/main/resources/static`: frontend pages/assets
 - `src/main/resources/db/schema-chess_coach_db.sql`: SQL schema reference
+- `src/main/resources/db/migrate_rename_course_strand_to_department.sql`: Migration for older schemas that still use `course_strand`

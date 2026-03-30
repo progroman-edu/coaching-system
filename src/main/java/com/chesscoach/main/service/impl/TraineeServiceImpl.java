@@ -5,14 +5,20 @@ import com.chesscoach.main.dto.trainee.TraineeRequest;
 import com.chesscoach.main.dto.trainee.TraineeResponse;
 import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
 import com.chesscoach.main.exception.ResourceNotFoundException;
+import com.chesscoach.main.model.BlitzRating;
+import com.chesscoach.main.model.BulletRating;
 import com.chesscoach.main.model.Coach;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.AttendanceRepository;
+import com.chesscoach.main.repository.BlitzRatingRepository;
+import com.chesscoach.main.repository.BulletRatingRepository;
 import com.chesscoach.main.repository.CoachRepository;
 import com.chesscoach.main.repository.MatchParticipantRepository;
 import com.chesscoach.main.repository.MatchRepository;
 import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.NotificationRepository;
+import com.chesscoach.main.repository.RapidRatingRepository;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.ChessComService;
@@ -48,6 +54,9 @@ public class TraineeServiceImpl implements TraineeService {
     private final MatchRepository matchRepository;
     private final RatingsHistoryRepository ratingsHistoryRepository;
     private final NotificationRepository notificationRepository;
+    private final BlitzRatingRepository blitzRatingRepository;
+    private final BulletRatingRepository bulletRatingRepository;
+    private final RapidRatingRepository rapidRatingRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Value("${app.rating.default:1200}")
@@ -64,6 +73,9 @@ public class TraineeServiceImpl implements TraineeService {
         MatchRepository matchRepository,
         RatingsHistoryRepository ratingsHistoryRepository,
         NotificationRepository notificationRepository,
+        BlitzRatingRepository blitzRatingRepository,
+        BulletRatingRepository bulletRatingRepository,
+        RapidRatingRepository rapidRatingRepository,
         JdbcTemplate jdbcTemplate
     ) {
         this.traineeRepository = traineeRepository;
@@ -76,6 +88,9 @@ public class TraineeServiceImpl implements TraineeService {
         this.matchRepository = matchRepository;
         this.ratingsHistoryRepository = ratingsHistoryRepository;
         this.notificationRepository = notificationRepository;
+        this.blitzRatingRepository = blitzRatingRepository;
+        this.bulletRatingRepository = bulletRatingRepository;
+        this.rapidRatingRepository = rapidRatingRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -96,11 +111,7 @@ public class TraineeServiceImpl implements TraineeService {
     public List<TraineeResponse> list(
         String search,
         Integer ratingMin,
-        Integer ratingMax,
-        Integer ageMin,
-        Integer ageMax,
-        String courseStrand,
-        String mode,
+        String department,
         String rankingOrder,
         Integer page,
         Integer size
@@ -109,11 +120,7 @@ public class TraineeServiceImpl implements TraineeService {
         return traineeRepository.search(
             normalizeSearch(search),
             ratingMin,
-            ratingMax,
-            ageMin,
-            ageMax,
-            courseStrand,
-            normalizeMode(mode),
+            department,
             PageRequest.of(page, size, sort)
         ).map(this::toResponse).toList();
     }
@@ -186,39 +193,50 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setAge(request.getAge());
         trainee.setAddress(request.getAddress());
         trainee.setGradeLevel(request.getGradeLevel());
-        trainee.setCourseStrand(request.getCourseStrand());
+        trainee.setDepartment(request.getDepartment());
         trainee.setPhotoPath(request.getPhotoPath());
         trainee.setChessUsername(normalizeUsername(request.getChessUsername()));
     }
 
     private void applyRatingsFromChessCom(Trainee trainee, String chessUsername) {
         String normalizedUsername = normalizeUsername(chessUsername);
+        
+        // Create rating entities for all game modes
+        BlitzRating blitzRating = new BlitzRating();
+        blitzRating.setTrainee(trainee);
+        
+        BulletRating bulletRating = new BulletRating();
+        bulletRating.setTrainee(trainee);
+        
+        RapidRating rapidRating = new RapidRating();
+        rapidRating.setTrainee(trainee);
+        
         if (normalizedUsername == null) {
-            trainee.setCurrentRating(defaultRating);
-            trainee.setHighestRating(defaultRating);
-            trainee.setCurrentRatingMode("default");
-            return;
+            blitzRating.setCurrentRating(defaultRating);
+            blitzRating.setHighestRating(defaultRating);
+            bulletRating.setCurrentRating(defaultRating);
+            bulletRating.setHighestRating(defaultRating);
+            rapidRating.setCurrentRating(defaultRating);
+            rapidRating.setHighestRating(defaultRating);
+        } else {
+            ChessComRatingResponse ratings = chessComService.getRatings(normalizedUsername);
+            Integer rapid = ratings.getRapid();
+            Integer blitz = ratings.getBlitz();
+            Integer bullet = ratings.getBullet();
+            
+            rapidRating.setCurrentRating(rapid != null ? rapid : defaultRating);
+            rapidRating.setHighestRating(rapid != null ? rapid : defaultRating);
+            
+            blitzRating.setCurrentRating(blitz != null ? blitz : defaultRating);
+            blitzRating.setHighestRating(blitz != null ? blitz : defaultRating);
+            
+            bulletRating.setCurrentRating(bullet != null ? bullet : defaultRating);
+            bulletRating.setHighestRating(bullet != null ? bullet : defaultRating);
         }
-
-        ChessComRatingResponse ratings = chessComService.getRatings(normalizedUsername);
-        Integer current = ratings.getRapid();
-        String mode = "rapid";
-        if (current == null) {
-            current = ratings.getBlitz();
-            mode = "blitz";
-        }
-        if (current == null) {
-            current = ratings.getBullet();
-            mode = "bullet";
-        }
-        if (current == null) {
-            log.warn("No rapid/blitz/bullet rating for Chess.com user {}; using default {}", normalizedUsername, defaultRating);
-            current = defaultRating;
-            mode = "default";
-        }
-        trainee.setCurrentRating(current);
-        trainee.setHighestRating(current);
-        trainee.setCurrentRatingMode(mode);
+        
+        trainee.setBlitzRating(blitzRating);
+        trainee.setBulletRating(bulletRating);
+        trainee.setRapidRating(rapidRating);
     }
 
     private static String normalizeUsername(String username) {
@@ -237,20 +255,6 @@ public class TraineeServiceImpl implements TraineeService {
         return normalized.isEmpty() ? null : normalized;
     }
 
-    private static String normalizeMode(String mode) {
-        if (mode == null) {
-            return null;
-        }
-        String normalized = mode.trim().toLowerCase();
-        if (normalized.isEmpty() || "all".equals(normalized)) {
-            return null;
-        }
-        return switch (normalized) {
-            case "rapid", "blitz", "bullet", "default" -> normalized;
-            default -> throw new IllegalArgumentException("mode must be one of: rapid, blitz, bullet, default, all");
-        };
-    }
-
     private static Sort resolveRankingSort(String rankingOrder) {
         String normalized = rankingOrder == null ? "asc" : rankingOrder.trim().toLowerCase();
         return switch (normalized) {
@@ -261,12 +265,25 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     private void recomputeRankings() {
-        List<Trainee> leaderboard = traineeRepository.findAllByOrderByCurrentRatingDescIdAsc();
+        List<Trainee> trainees = traineeRepository.findAll();
+        trainees.sort((a, b) -> {
+            int ratingA = getRapidCurrentRating(a);
+            int ratingB = getRapidCurrentRating(b);
+            if (ratingA != ratingB) {
+                return Integer.compare(ratingB, ratingA); // descending
+            }
+            return Long.compare(a.getId(), b.getId()); // ascending by id
+        });
         int rank = 1;
-        for (Trainee t : leaderboard) {
+        for (Trainee t : trainees) {
             t.setRanking(rank++);
         }
-        traineeRepository.saveAll(leaderboard);
+        traineeRepository.saveAll(trainees);
+    }
+
+    private int getRapidCurrentRating(Trainee trainee) {
+        RapidRating rapid = trainee.getRapidRating();
+        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
     }
 
     private void resetAutoIncrementIfNoTrainees() {
@@ -287,13 +304,20 @@ public class TraineeServiceImpl implements TraineeService {
         response.setAge(trainee.getAge());
         response.setAddress(trainee.getAddress());
         response.setGradeLevel(trainee.getGradeLevel());
-        response.setCourseStrand(trainee.getCourseStrand());
-        response.setCurrentRating(trainee.getCurrentRating());
-        response.setCurrentRatingMode(trainee.getCurrentRatingMode());
-        response.setHighestRating(trainee.getHighestRating());
-        response.setHighestRapidRating(trainee.getHighestRapidRating());
-        response.setHighestBlitzRating(trainee.getHighestBlitzRating());
-        response.setHighestBulletRating(trainee.getHighestBulletRating());
+        response.setDepartment(trainee.getDepartment());
+        
+        // Map ratings from separate tables
+        BlitzRating blitz = trainee.getBlitzRating();
+        BulletRating bullet = trainee.getBulletRating();
+        RapidRating rapid = trainee.getRapidRating();
+        
+        response.setBlitzCurrentRating(blitz != null ? blitz.getCurrentRating() : null);
+        response.setBlitzHighestRating(blitz != null ? blitz.getHighestRating() : null);
+        response.setBulletCurrentRating(bullet != null ? bullet.getCurrentRating() : null);
+        response.setBulletHighestRating(bullet != null ? bullet.getHighestRating() : null);
+        response.setRapidCurrentRating(rapid != null ? rapid.getCurrentRating() : null);
+        response.setRapidHighestRating(rapid != null ? rapid.getHighestRating() : null);
+        
         response.setLatestRatingChange(findLatestRatingChange(trainee.getId()));
         response.setAttendancePercentageLast30Days(computeAttendancePercentageLast30Days(trainee.getId()));
         response.setLastActivityAt(resolveLastActivityAt(trainee));

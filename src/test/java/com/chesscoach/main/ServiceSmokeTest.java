@@ -96,7 +96,7 @@ class ServiceSmokeTest {
         request.setAge(16);
         request.setAddress("Test Address");
         request.setGradeLevel("10");
-        request.setCourseStrand("STEM");
+        request.setDepartment("High School");
         request.setChessUsername("test-user");
 
         TraineeResponse created = traineeService.create(request);
@@ -104,6 +104,9 @@ class ServiceSmokeTest {
 
         assertThat(created.getId()).isNotNull();
         assertThat(created.getName()).isEqualTo("Test Trainee");
+        assertThat(created.getRapidHighestRating()).isEqualTo(1200);
+        assertThat(created.getBlitzHighestRating()).isEqualTo(1200);
+        assertThat(created.getBulletHighestRating()).isEqualTo(1200);
         assertThat(dashboard.getTotalTrainees()).isGreaterThanOrEqualTo(1);
     }
 
@@ -143,9 +146,9 @@ class ServiceSmokeTest {
     @Test
     void importReportContainsRowLevelErrors() {
         String csv = """
-            id,name,age,address,gradeLevel,courseStrand,currentRating
-            1,Valid Name,15,Addr,10,STEM,1200
-            2,Bad Age,not-a-number,Addr,10,STEM,1300
+            id,name,age,address,gradeLevel,department,rapidCurrentRating
+            1,Valid Name,15,Addr,10,High School,1200
+            2,Bad Age,not-a-number,Addr,10,College,1300
             """;
         MockMultipartFile file = new MockMultipartFile(
             "file",
@@ -168,8 +171,8 @@ class ServiceSmokeTest {
     void createTraineeFallsBackToDefaultRatingWhenChessComModesAreMissing() {
         TraineeResponse created = createTrainee("No Rating User", "norating-user");
 
-        assertThat(created.getCurrentRating()).isEqualTo(1200);
-        assertThat(created.getHighestRating()).isEqualTo(1200);
+        assertThat(created.getRapidCurrentRating()).isEqualTo(1200);
+        assertThat(created.getRapidHighestRating()).isEqualTo(1200);
     }
 
     @Test
@@ -178,8 +181,8 @@ class ServiceSmokeTest {
         createTrainee("Rank Two", "rank-two");
         createTrainee("Rank Three", "rank-three");
 
-        List<TraineeResponse> asc = traineeService.list(null, null, null, null, null, null, null, "asc", 0, 20);
-        List<TraineeResponse> desc = traineeService.list(null, null, null, null, null, null, null, "desc", 0, 20);
+        List<TraineeResponse> asc = traineeService.list(null, null, null, "asc", 0, 20);
+        List<TraineeResponse> desc = traineeService.list(null, null, null, "desc", 0, 20);
 
         assertThat(asc).isNotEmpty();
         assertThat(desc).isNotEmpty();
@@ -193,7 +196,7 @@ class ServiceSmokeTest {
         request.setAge(16);
         request.setAddress("Test Address");
         request.setGradeLevel("10");
-        request.setCourseStrand("STEM");
+        request.setDepartment("College");
         request.setChessUsername(username);
         return traineeService.create(request);
     }

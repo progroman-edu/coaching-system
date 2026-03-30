@@ -53,11 +53,7 @@ public class TraineeController {
     public ResponseEntity<ApiResponse<List<TraineeResponse>>> list(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) Integer ratingMin,
-        @RequestParam(required = false) Integer ratingMax,
-        @RequestParam(required = false) Integer ageMin,
-        @RequestParam(required = false) Integer ageMax,
-        @RequestParam(required = false) String courseStrand,
-        @RequestParam(required = false) String mode,
+        @RequestParam(required = false) String department,
         @RequestParam(defaultValue = "asc") String rankingOrder,
         @RequestParam(defaultValue = "0") Integer page,
         @RequestParam(defaultValue = "20") Integer size,
@@ -66,11 +62,7 @@ public class TraineeController {
         List<TraineeResponse> data = traineeService.list(
             search,
             ratingMin,
-            ratingMax,
-            ageMin,
-            ageMax,
-            courseStrand,
-            mode,
+            department,
             rankingOrder,
             page,
             size

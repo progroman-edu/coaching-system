@@ -23,9 +23,7 @@ public final class RoundRobinGenerator {
         int normalizedRound = ((roundNumber - 1) % rounds + rounds) % rounds;
 
         List<Long> rotated = new ArrayList<>(players);
-        for (int i = 0; i < normalizedRound; i++) {
-            rotateKeepingFirst(rotated);
-        }
+        applyRotationsRecursively(rotated, normalizedRound);
 
         List<Pairing> pairings = new ArrayList<>();
         int half = rotated.size() / 2;
@@ -43,6 +41,14 @@ public final class RoundRobinGenerator {
         }
         Long last = list.remove(list.size() - 1);
         list.add(1, last);
+    }
+
+    private static void applyRotationsRecursively(List<Long> list, int rotationsRemaining) {
+        if (rotationsRemaining <= 0 || list.size() <= 2) {
+            return;
+        }
+        rotateKeepingFirst(list);
+        applyRotationsRecursively(list, rotationsRemaining - 1);
     }
 
     public record Pairing(Long whiteTraineeId, Long blackTraineeId) {

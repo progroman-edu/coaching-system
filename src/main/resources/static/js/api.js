@@ -1,20 +1,68 @@
 // This file contains reusable fetch-based API client helpers for frontend pages.
 const API_BASE = "/api";
+const GLOBAL_LOADER_ID = "globalLoadingOverlay";
+
+let globalLoaderEl = null;
+let activeRequestCount = 0;
+
+function ensureGlobalLoader() {
+    if (typeof document === "undefined") {
+        return null;
+    }
+    if (globalLoaderEl && document.body?.contains(globalLoaderEl)) {
+        return globalLoaderEl;
+    }
+    const existing = document.getElementById(GLOBAL_LOADER_ID);
+    if (existing) {
+        globalLoaderEl = existing;
+        return globalLoaderEl;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = GLOBAL_LOADER_ID;
+    overlay.className = "loading-overlay";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.innerHTML = `
+        <div class="loading-box">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Loading...</span>
+        </div>
+    `;
+    document.body?.appendChild(overlay);
+    globalLoaderEl = overlay;
+    return globalLoaderEl;
+}
+
+function setGlobalLoading(active) {
+    const overlay = ensureGlobalLoader();
+    if (!overlay) {
+        return;
+    }
+    activeRequestCount = Math.max(0, activeRequestCount + (active ? 1 : -1));
+    const isBusy = activeRequestCount > 0;
+    overlay.classList.toggle("active", isBusy);
+    overlay.setAttribute("aria-hidden", isBusy ? "false" : "true");
+}
 
 async function request(path, options = {}) {
-    const response = await fetch(`${API_BASE}${path}`, {
-        headers: {
-            ...(!(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
-            ...(options.headers || {})
-        },
-        ...options
-    });
-    const json = await response.json().catch(() => ({}));
-    if (!response.ok || json.success === false) {
-        const message = json.message || `Request failed (${response.status})`;
-        throw new Error(message);
+    setGlobalLoading(true);
+    try {
+        const response = await fetch(`${API_BASE}${path}`, {
+            headers: {
+                ...(!(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+                ...(options.headers || {})
+            },
+            ...options
+        });
+        const json = await response.json().catch(() => ({}));
+        if (!response.ok || json.success === false) {
+            const message = json.message || `Request failed (${response.status})`;
+            throw new Error(message);
+        }
+        return json.data;
+    } finally {
+        setGlobalLoading(false);
     }
-    return json.data;
 }
 
 export const api = {

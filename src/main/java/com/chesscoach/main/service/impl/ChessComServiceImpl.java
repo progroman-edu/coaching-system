@@ -19,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chesscoach.main.dto.chesscom.ChessComRatingResponse;
 import com.chesscoach.main.dto.chesscom.ChessComSyncRatingResponse;
 import com.chesscoach.main.exception.ResourceNotFoundException;
+import com.chesscoach.main.model.BlitzRating;
+import com.chesscoach.main.model.BulletRating;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.RatingsHistory;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
@@ -151,6 +154,16 @@ public class ChessComServiceImpl implements ChessComService {
         }
 
         ChessComRatingResponse ratings = getRatings(trainee.getChessUsername());
+        Integer rapid = ratings.getRapid();
+        Integer blitz = ratings.getBlitz();
+        Integer bullet = ratings.getBullet();
+
+        // Update all rating entities
+        updateRapidRating(trainee, rapid);
+        updateBlitzRating(trainee, blitz);
+        updateBulletRating(trainee, bullet);
+
+        // Determine target rating based on mode
         String resolvedMode = normalizedMode;
         Integer target = resolveRatingByMode(ratings, normalizedMode);
         if (target == null) {
@@ -169,10 +182,7 @@ public class ChessComServiceImpl implements ChessComService {
             throw new IllegalStateException("No rapid/blitz/bullet rating found for user " + trainee.getChessUsername());
         }
 
-        int oldRating = trainee.getCurrentRating() != null ? trainee.getCurrentRating() : target;
-        trainee.setCurrentRating(target);
-        trainee.setHighestRating(Math.max(target, trainee.getHighestRating() == null ? target : trainee.getHighestRating()));
-        trainee.setCurrentRatingMode(resolvedMode);
+        int oldRating = getRatingForMode(trainee, resolvedMode);
         traineeRepository.save(trainee);
         recomputeRankings();
 
@@ -194,13 +204,78 @@ public class ChessComServiceImpl implements ChessComService {
         return response;
     }
 
+    private void updateRapidRating(Trainee trainee, Integer rating) {
+        RapidRating rapid = trainee.getRapidRating();
+        if (rapid == null) {
+            rapid = new RapidRating();
+            rapid.setTrainee(trainee);
+            trainee.setRapidRating(rapid);
+        }
+        if (rating != null) {
+            rapid.setCurrentRating(rating);
+            if (rapid.getHighestRating() == null || rating > rapid.getHighestRating()) {
+                rapid.setHighestRating(rating);
+            }
+        }
+    }
+
+    private void updateBlitzRating(Trainee trainee, Integer rating) {
+        BlitzRating blitz = trainee.getBlitzRating();
+        if (blitz == null) {
+            blitz = new BlitzRating();
+            blitz.setTrainee(trainee);
+            trainee.setBlitzRating(blitz);
+        }
+        if (rating != null) {
+            blitz.setCurrentRating(rating);
+            if (blitz.getHighestRating() == null || rating > blitz.getHighestRating()) {
+                blitz.setHighestRating(rating);
+            }
+        }
+    }
+
+    private void updateBulletRating(Trainee trainee, Integer rating) {
+        BulletRating bullet = trainee.getBulletRating();
+        if (bullet == null) {
+            bullet = new BulletRating();
+            bullet.setTrainee(trainee);
+            trainee.setBulletRating(bullet);
+        }
+        if (rating != null) {
+            bullet.setCurrentRating(rating);
+            if (bullet.getHighestRating() == null || rating > bullet.getHighestRating()) {
+                bullet.setHighestRating(rating);
+            }
+        }
+    }
+
+    private int getRatingForMode(Trainee trainee, String mode) {
+        return switch (mode) {
+            case "rapid" -> trainee.getRapidRating() != null && trainee.getRapidRating().getCurrentRating() != null 
+                ? trainee.getRapidRating().getCurrentRating() : 1200;
+            case "blitz" -> trainee.getBlitzRating() != null && trainee.getBlitzRating().getCurrentRating() != null 
+                ? trainee.getBlitzRating().getCurrentRating() : 1200;
+            case "bullet" -> trainee.getBulletRating() != null && trainee.getBulletRating().getCurrentRating() != null 
+                ? trainee.getBulletRating().getCurrentRating() : 1200;
+            default -> 1200;
+        };
+    }
+
     private void recomputeRankings() {
-        List<Trainee> leaderboard = traineeRepository.findAllByOrderByCurrentRatingDescIdAsc();
+        List<Trainee> trainees = traineeRepository.findAll();
+        trainees.sort((a, b) -> {
+            int ratingA = getRatingForMode(a, "rapid");
+            int ratingB = getRatingForMode(b, "rapid");
+            if (ratingA != ratingB) {
+                return Integer.compare(ratingB, ratingA);
+            }
+            return Long.compare(a.getId(), b.getId());
+        });
         int rank = 1;
-        for (Trainee trainee : leaderboard) {
+        for (Trainee trainee : trainees) {
             trainee.setRanking(rank++);
         }
-        traineeRepository.saveAll(leaderboard);
+        traineeRepository.saveAll(trainees);
     }
 
     private JsonNode fetchJson(String path) {
@@ -240,7 +315,7 @@ public class ChessComServiceImpl implements ChessComService {
 
     private static Integer getRating(JsonNode root, String nodeName) {
         JsonNode node = root.path(nodeName).path("last").path("rating");
-        return node.isInt() ? node.intValue() : null;
+        return node.isInt() ? node.intValue() : 0;
     }
 
     private static Integer getPuzzleRush(JsonNode root) {

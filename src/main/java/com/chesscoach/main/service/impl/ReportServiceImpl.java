@@ -4,8 +4,11 @@ package com.chesscoach.main.service.impl;
 import com.chesscoach.main.dto.report.ReportExportResponse;
 import com.chesscoach.main.dto.report.ReportImportResponse;
 import com.chesscoach.main.model.Attendance;
+import com.chesscoach.main.model.BlitzRating;
+import com.chesscoach.main.model.BulletRating;
 import com.chesscoach.main.model.Coach;
 import com.chesscoach.main.model.MatchResult;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.AttendanceRepository;
 import com.chesscoach.main.repository.CoachRepository;
@@ -144,18 +147,24 @@ public class ReportServiceImpl implements ReportService {
 
     private List<String> exportTraineesCsv() {
         List<String> lines = new ArrayList<>();
-        lines.add("id,name,age,address,gradeLevel,courseStrand,currentRating,currentRatingMode,highestRating,ranking,photoPath,chessUsername");
+        lines.add("id,name,age,address,gradeLevel,department,rapidCurrentRating,rapidHighestRating,blitzCurrentRating,blitzHighestRating,bulletCurrentRating,bulletHighestRating,ranking,photoPath,chessUsername");
         for (Trainee t : traineeRepository.findAll()) {
+            RapidRating rapid = t.getRapidRating();
+            BlitzRating blitz = t.getBlitzRating();
+            BulletRating bullet = t.getBulletRating();
             lines.add(String.join(",",
                 safeCsv(t.getId()),
                 safeCsv(t.getName()),
                 safeCsv(t.getAge()),
                 safeCsv(t.getAddress()),
                 safeCsv(t.getGradeLevel()),
-                safeCsv(t.getCourseStrand()),
-                safeCsv(t.getCurrentRating()),
-                safeCsv(t.getCurrentRatingMode()),
-                safeCsv(t.getHighestRating()),
+                safeCsv(t.getDepartment()),
+                safeCsv(rapid != null ? rapid.getCurrentRating() : null),
+                safeCsv(rapid != null ? rapid.getHighestRating() : null),
+                safeCsv(blitz != null ? blitz.getCurrentRating() : null),
+                safeCsv(blitz != null ? blitz.getHighestRating() : null),
+                safeCsv(bullet != null ? bullet.getCurrentRating() : null),
+                safeCsv(bullet != null ? bullet.getHighestRating() : null),
                 safeCsv(t.getRanking()),
                 safeCsv(t.getPhotoPath()),
                 safeCsv(t.getChessUsername())
@@ -212,15 +221,18 @@ public class ReportServiceImpl implements ReportService {
         Integer age = parseInt(getCell(raw, columns, "age", 1), true);
         String address = clean(getCell(raw, columns, "address", 2));
         String gradeLevel = clean(getCell(raw, columns, "gradeLevel", 3));
-        String courseStrand = clean(getCell(raw, columns, "courseStrand", 4));
-        Integer currentRating = parseInt(getCell(raw, columns, "currentRating", 5), true);
-        String currentRatingMode = clean(getCell(raw, columns, "currentRatingMode", 6));
-        Integer highestRating = parseInt(getCell(raw, columns, "highestRating", 7), false);
-        Integer ranking = parseInt(getCell(raw, columns, "ranking", 8), false);
-        String photoPath = clean(getCell(raw, columns, "photoPath", 9));
-        String chessUsername = clean(getCell(raw, columns, "chessUsername", 10));
+        String department = clean(getCell(raw, columns, "department", 4));
+        Integer rapidCurrentRating = parseInt(getCell(raw, columns, "rapidCurrentRating", 5), false);
+        Integer rapidHighestRating = parseInt(getCell(raw, columns, "rapidHighestRating", 6), false);
+        Integer blitzCurrentRating = parseInt(getCell(raw, columns, "blitzCurrentRating", 7), false);
+        Integer blitzHighestRating = parseInt(getCell(raw, columns, "blitzHighestRating", 8), false);
+        Integer bulletCurrentRating = parseInt(getCell(raw, columns, "bulletCurrentRating", 9), false);
+        Integer bulletHighestRating = parseInt(getCell(raw, columns, "bulletHighestRating", 10), false);
+        Integer ranking = parseInt(getCell(raw, columns, "ranking", 11), false);
+        String photoPath = clean(getCell(raw, columns, "photoPath", 12));
+        String chessUsername = clean(getCell(raw, columns, "chessUsername", 13));
 
-        if (name.isBlank() || address.isBlank() || gradeLevel.isBlank() || courseStrand.isBlank()) {
+        if (name.isBlank() || address.isBlank() || gradeLevel.isBlank() || department.isBlank()) {
             throw new IllegalArgumentException("Missing required trainee values");
         }
 
@@ -231,13 +243,39 @@ public class ReportServiceImpl implements ReportService {
         trainee.setAge(age);
         trainee.setAddress(address);
         trainee.setGradeLevel(gradeLevel);
-        trainee.setCourseStrand(courseStrand);
-        trainee.setCurrentRating(currentRating);
-        trainee.setCurrentRatingMode(currentRatingMode.isBlank() ? null : currentRatingMode);
-        trainee.setHighestRating(highestRating != null ? highestRating : currentRating);
+        trainee.setDepartment(department);
         trainee.setRanking(ranking);
         trainee.setPhotoPath(photoPath.isBlank() ? null : photoPath);
         trainee.setChessUsername(chessUsername.isBlank() ? null : chessUsername);
+        
+        // Set up rating entities
+        RapidRating rapid = trainee.getRapidRating();
+        if (rapid == null) {
+            rapid = new RapidRating();
+            rapid.setTrainee(trainee);
+            trainee.setRapidRating(rapid);
+        }
+        rapid.setCurrentRating(rapidCurrentRating != null ? rapidCurrentRating : 1200);
+        rapid.setHighestRating(rapidHighestRating != null ? rapidHighestRating : rapid.getCurrentRating());
+        
+        BlitzRating blitz = trainee.getBlitzRating();
+        if (blitz == null) {
+            blitz = new BlitzRating();
+            blitz.setTrainee(trainee);
+            trainee.setBlitzRating(blitz);
+        }
+        blitz.setCurrentRating(blitzCurrentRating != null ? blitzCurrentRating : 1200);
+        blitz.setHighestRating(blitzHighestRating != null ? blitzHighestRating : blitz.getCurrentRating());
+        
+        BulletRating bullet = trainee.getBulletRating();
+        if (bullet == null) {
+            bullet = new BulletRating();
+            bullet.setTrainee(trainee);
+            trainee.setBulletRating(bullet);
+        }
+        bullet.setCurrentRating(bulletCurrentRating != null ? bulletCurrentRating : 1200);
+        bullet.setHighestRating(bulletHighestRating != null ? bulletHighestRating : bullet.getCurrentRating());
+        
         traineeRepository.save(trainee);
     }
 
