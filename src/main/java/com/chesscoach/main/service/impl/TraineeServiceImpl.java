@@ -136,6 +136,7 @@ public class TraineeServiceImpl implements TraineeService {
     public TraineeResponse update(Long id, TraineeRequest request) {
         Trainee trainee = getTraineeOrThrow(id);
         applyRequest(trainee, request);
+        applyRatingsFromChessCom(trainee, request.getChessUsername());
         return toResponse(traineeRepository.save(trainee));
     }
 
@@ -221,17 +222,21 @@ public class TraineeServiceImpl implements TraineeService {
         } else {
             ChessComRatingResponse ratings = chessComService.getRatings(normalizedUsername);
             Integer rapid = ratings.getRapid();
+            Integer rapidBest = ratings.getRapidBest();
             Integer blitz = ratings.getBlitz();
+            Integer blitzBest = ratings.getBlitzBest();
             Integer bullet = ratings.getBullet();
+            Integer bulletBest = ratings.getBulletBest();
             
+            // Set current and best ratings separately
             rapidRating.setCurrentRating(rapid != null ? rapid : defaultRating);
-            rapidRating.setHighestRating(rapid != null ? rapid : defaultRating);
+            rapidRating.setHighestRating(rapidBest != null ? rapidBest : (rapid != null ? rapid : defaultRating));
             
             blitzRating.setCurrentRating(blitz != null ? blitz : defaultRating);
-            blitzRating.setHighestRating(blitz != null ? blitz : defaultRating);
+            blitzRating.setHighestRating(blitzBest != null ? blitzBest : (blitz != null ? blitz : defaultRating));
             
             bulletRating.setCurrentRating(bullet != null ? bullet : defaultRating);
-            bulletRating.setHighestRating(bullet != null ? bullet : defaultRating);
+            bulletRating.setHighestRating(bulletBest != null ? bulletBest : (bullet != null ? bullet : defaultRating));
         }
         
         trainee.setBlitzRating(blitzRating);
@@ -311,12 +316,12 @@ public class TraineeServiceImpl implements TraineeService {
         BulletRating bullet = trainee.getBulletRating();
         RapidRating rapid = trainee.getRapidRating();
         
-        response.setBlitzCurrentRating(blitz != null ? blitz.getCurrentRating() : null);
-        response.setBlitzHighestRating(blitz != null ? blitz.getHighestRating() : null);
-        response.setBulletCurrentRating(bullet != null ? bullet.getCurrentRating() : null);
-        response.setBulletHighestRating(bullet != null ? bullet.getHighestRating() : null);
-        response.setRapidCurrentRating(rapid != null ? rapid.getCurrentRating() : null);
-        response.setRapidHighestRating(rapid != null ? rapid.getHighestRating() : null);
+        response.setBlitzCurrentRating(blitz != null && blitz.getCurrentRating() != null ? blitz.getCurrentRating() : defaultRating);
+        response.setBlitzHighestRating(blitz != null && blitz.getHighestRating() != null ? blitz.getHighestRating() : defaultRating);
+        response.setBulletCurrentRating(bullet != null && bullet.getCurrentRating() != null ? bullet.getCurrentRating() : defaultRating);
+        response.setBulletHighestRating(bullet != null && bullet.getHighestRating() != null ? bullet.getHighestRating() : defaultRating);
+        response.setRapidCurrentRating(rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating);
+        response.setRapidHighestRating(rapid != null && rapid.getHighestRating() != null ? rapid.getHighestRating() : defaultRating);
         
         response.setLatestRatingChange(findLatestRatingChange(trainee.getId()));
         response.setAttendancePercentageLast30Days(computeAttendancePercentageLast30Days(trainee.getId()));
@@ -349,12 +354,12 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     private OffsetDateTime resolveLastActivityAt(Trainee trainee) {
-        OffsetDateTime latest = trainee.getUpdatedAt();
+        OffsetDateTime latest = trainee.getUpdatedAt() != null ? trainee.getUpdatedAt() : OffsetDateTime.now();
         List<com.chesscoach.main.model.MatchResult> results =
             matchResultRepository.findByWhiteTraineeIdOrBlackTraineeIdOrderByPlayedAtDesc(trainee.getId(), trainee.getId());
         if (!results.isEmpty()) {
             OffsetDateTime playedAt = results.getFirst().getPlayedAt();
-            if (playedAt != null && (latest == null || playedAt.isAfter(latest))) {
+            if (playedAt != null && playedAt.isAfter(latest)) {
                 latest = playedAt;
             }
         }

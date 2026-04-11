@@ -8,9 +8,17 @@ import lombok.Setter;
 @Getter
 public class ChessComRatingResponse {
     private String username;
+    
+    // Current ratings
     private Integer rapid;
     private Integer blitz;
     private Integer bullet;
+    
+    // Best/Peak ratings
+    private Integer rapidBest;
+    private Integer blitzBest;
+    private Integer bulletBest;
+    
     private Integer puzzles;
     private Integer puzzleRush;
 

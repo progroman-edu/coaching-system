@@ -158,6 +158,10 @@ public class MatchServiceImpl implements MatchService {
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + expectedWhiteId));
         Trainee black = traineeRepository.findById(expectedBlackId)
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + expectedBlackId));
+        
+        if (expectedWhiteId.equals(expectedBlackId)) {
+            throw new IllegalArgumentException("White and black players must be different trainees");
+        }
 
         MatchResult result = new MatchResult();
         result.setMatch(match);

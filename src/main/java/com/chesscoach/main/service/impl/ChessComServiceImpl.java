@@ -65,9 +65,17 @@ public class ChessComServiceImpl implements ChessComService {
         JsonNode stats = fetchJson("player/" + encode(normalizedUsername) + "/stats");
         ChessComRatingResponse response = new ChessComRatingResponse();
         response.setUsername(normalizedUsername);
-        response.setRapid(getRating(stats, "chess_rapid"));
-        response.setBlitz(getRating(stats, "chess_blitz"));
-        response.setBullet(getRating(stats, "chess_bullet"));
+        
+        // Current ratings
+        response.setRapid(getRating(stats, "chess_rapid", "last"));
+        response.setBlitz(getRating(stats, "chess_blitz", "last"));
+        response.setBullet(getRating(stats, "chess_bullet", "last"));
+        
+        // Best/Peak ratings
+        response.setRapidBest(getRating(stats, "chess_rapid", "best"));
+        response.setBlitzBest(getRating(stats, "chess_blitz", "best"));
+        response.setBulletBest(getRating(stats, "chess_bullet", "best"));
+        
         response.setPuzzleRush(getPuzzleRush(stats));
         return response;
     }
@@ -155,13 +163,16 @@ public class ChessComServiceImpl implements ChessComService {
 
         ChessComRatingResponse ratings = getRatings(trainee.getChessUsername());
         Integer rapid = ratings.getRapid();
+        Integer rapidBest = ratings.getRapidBest();
         Integer blitz = ratings.getBlitz();
+        Integer blitzBest = ratings.getBlitzBest();
         Integer bullet = ratings.getBullet();
+        Integer bulletBest = ratings.getBulletBest();
 
-        // Update all rating entities
-        updateRapidRating(trainee, rapid);
-        updateBlitzRating(trainee, blitz);
-        updateBulletRating(trainee, bullet);
+        // Update all rating entities with both current and best ratings
+        updateRapidRating(trainee, rapid, rapidBest);
+        updateBlitzRating(trainee, blitz, blitzBest);
+        updateBulletRating(trainee, bullet, bulletBest);
 
         // Determine target rating based on mode
         String resolvedMode = normalizedMode;
@@ -204,7 +215,7 @@ public class ChessComServiceImpl implements ChessComService {
         return response;
     }
 
-    private void updateRapidRating(Trainee trainee, Integer rating) {
+    private void updateRapidRating(Trainee trainee, Integer rating, Integer bestRating) {
         RapidRating rapid = trainee.getRapidRating();
         if (rapid == null) {
             rapid = new RapidRating();
@@ -213,13 +224,15 @@ public class ChessComServiceImpl implements ChessComService {
         }
         if (rating != null) {
             rapid.setCurrentRating(rating);
-            if (rapid.getHighestRating() == null || rating > rapid.getHighestRating()) {
-                rapid.setHighestRating(rating);
+        }
+        if (bestRating != null) {
+            if (rapid.getHighestRating() == null || bestRating > rapid.getHighestRating()) {
+                rapid.setHighestRating(bestRating);
             }
         }
     }
 
-    private void updateBlitzRating(Trainee trainee, Integer rating) {
+    private void updateBlitzRating(Trainee trainee, Integer rating, Integer bestRating) {
         BlitzRating blitz = trainee.getBlitzRating();
         if (blitz == null) {
             blitz = new BlitzRating();
@@ -228,13 +241,15 @@ public class ChessComServiceImpl implements ChessComService {
         }
         if (rating != null) {
             blitz.setCurrentRating(rating);
-            if (blitz.getHighestRating() == null || rating > blitz.getHighestRating()) {
-                blitz.setHighestRating(rating);
+        }
+        if (bestRating != null) {
+            if (blitz.getHighestRating() == null || bestRating > blitz.getHighestRating()) {
+                blitz.setHighestRating(bestRating);
             }
         }
     }
 
-    private void updateBulletRating(Trainee trainee, Integer rating) {
+    private void updateBulletRating(Trainee trainee, Integer rating, Integer bestRating) {
         BulletRating bullet = trainee.getBulletRating();
         if (bullet == null) {
             bullet = new BulletRating();
@@ -243,8 +258,10 @@ public class ChessComServiceImpl implements ChessComService {
         }
         if (rating != null) {
             bullet.setCurrentRating(rating);
-            if (bullet.getHighestRating() == null || rating > bullet.getHighestRating()) {
-                bullet.setHighestRating(rating);
+        }
+        if (bestRating != null) {
+            if (bullet.getHighestRating() == null || bestRating > bullet.getHighestRating()) {
+                bullet.setHighestRating(bestRating);
             }
         }
     }
@@ -252,12 +269,12 @@ public class ChessComServiceImpl implements ChessComService {
     private int getRatingForMode(Trainee trainee, String mode) {
         return switch (mode) {
             case "rapid" -> trainee.getRapidRating() != null && trainee.getRapidRating().getCurrentRating() != null 
-                ? trainee.getRapidRating().getCurrentRating() : 1200;
+                ? trainee.getRapidRating().getCurrentRating() : 1200; // TODO: use configurable default
             case "blitz" -> trainee.getBlitzRating() != null && trainee.getBlitzRating().getCurrentRating() != null 
-                ? trainee.getBlitzRating().getCurrentRating() : 1200;
+                ? trainee.getBlitzRating().getCurrentRating() : 1200; // TODO: use configurable default
             case "bullet" -> trainee.getBulletRating() != null && trainee.getBulletRating().getCurrentRating() != null 
-                ? trainee.getBulletRating().getCurrentRating() : 1200;
-            default -> 1200;
+                ? trainee.getBulletRating().getCurrentRating() : 1200; // TODO: use configurable default
+            default -> 1200; // TODO: use configurable default
         };
     }
 
@@ -313,8 +330,8 @@ public class ChessComServiceImpl implements ChessComService {
         }
     }
 
-    private static Integer getRating(JsonNode root, String nodeName) {
-        JsonNode node = root.path(nodeName).path("last").path("rating");
+    private static Integer getRating(JsonNode root, String nodeName, String ratingType) {
+        JsonNode node = root.path(nodeName).path(ratingType).path("rating");
         return node.isInt() ? node.intValue() : 0;
     }
 

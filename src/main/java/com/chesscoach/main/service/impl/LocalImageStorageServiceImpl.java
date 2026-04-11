@@ -54,7 +54,12 @@ public class LocalImageStorageServiceImpl implements ImageStorageService {
 
         String fileName = "trainee-" + traineeId + "-" + OffsetDateTime.now().toEpochSecond() + "." + extension;
         Path storageDir = Paths.get(uploadBaseDir, traineePhotoSubdir).toAbsolutePath().normalize();
-        Path target = storageDir.resolve(fileName);
+        Path target = storageDir.resolve(fileName).toAbsolutePath().normalize();
+
+        // Prevent path traversal attacks
+        if (!target.startsWith(storageDir)) {
+            throw new SecurityException("Path traversal detected");
+        }
 
         try {
             Files.createDirectories(storageDir);

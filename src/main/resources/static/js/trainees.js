@@ -58,10 +58,10 @@ function modeLabel(mode) {
 
 function getSelectedModeHighestRating(trainee) {
     const mode = getSelectedMode();
-    if (mode === "blitz" && trainee?.highestBlitzRating != null) return trainee.highestBlitzRating;
-    if (mode === "bullet" && trainee?.highestBulletRating != null) return trainee.highestBulletRating;
-    if (mode === "rapid" && trainee?.highestRapidRating != null) return trainee.highestRapidRating;
-    return trainee?.currentRating ?? "";
+    if (mode === "blitz" && trainee?.blitzHighestRating != null) return trainee.blitzHighestRating;
+    if (mode === "bullet" && trainee?.bulletHighestRating != null) return trainee.bulletHighestRating;
+    if (mode === "rapid" && trainee?.rapidHighestRating != null) return trainee.rapidHighestRating;
+    return trainee?.rapidCurrentRating ?? "";
 }
 
 function getRankBadgeClass(rank) {
@@ -205,7 +205,7 @@ function renderTraineeTable() {
                     </div>
                 </td>
                 <td>
-                    <span class="rating-main">${escapeHtml(t.currentRating ?? "")}</span>
+                    <span class="rating-main">${escapeHtml(t.rapidCurrentRating ?? "")}</span>
                     <span class="rating-sub">Peak ${escapeHtml(getSelectedModeHighestRating(t) ?? "")}</span>
                 </td>
                 <td>${formatDelta(t.latestRatingChange)}</td>
@@ -286,7 +286,7 @@ tbody?.addEventListener("click", async (e) => {
         if (!trainee) return;
         showMessage(
             msg,
-            `${trainee.name} • Rank #${trainee.ranking ?? "-"} • Current ${trainee.currentRating ?? "-"} • Last activity ${formatLastActivity(trainee.lastActivityAt)}`
+            `${trainee.name} • Rank #${trainee.ranking ?? "-"} • Current ${trainee.rapidCurrentRating ?? "-"} • Last activity ${formatLastActivity(trainee.lastActivityAt)}`
         );
         return;
     }

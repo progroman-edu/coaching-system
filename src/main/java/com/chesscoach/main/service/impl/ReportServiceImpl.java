@@ -113,7 +113,7 @@ public class ReportServiceImpl implements ReportService {
                 } catch (Exception ex) {
                     failedRows++;
                     if (errors.size() < MAX_IMPORT_ERRORS) {
-                        errors.add("Row " + (totalRows + 1) + ": " + ex.getMessage());
+                        errors.add("Row " + totalRows + ": " + ex.getMessage());
                     }
                 }
             }
