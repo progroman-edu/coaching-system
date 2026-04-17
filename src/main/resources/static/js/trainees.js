@@ -206,7 +206,6 @@ function renderTraineeTable() {
                 </td>
                 <td>
                     <span class="rating-main">${escapeHtml(t.rapidCurrentRating ?? "")}</span>
-                    <span class="rating-sub">Peak ${escapeHtml(getSelectedModeHighestRating(t) ?? "")}</span>
                 </td>
                 <td>${formatDelta(t.latestRatingChange)}</td>
                 <td>

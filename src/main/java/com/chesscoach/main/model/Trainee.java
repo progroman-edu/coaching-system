@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,8 @@ import java.util.List;
         @Index(name = "idx_trainee_name", columnList = "name"),
         @Index(name = "idx_trainee_age", columnList = "age"),
         @Index(name = "idx_trainee_department", columnList = "department"),
-        @Index(name = "idx_trainee_chess_username", columnList = "chess_username")
+        @Index(name = "idx_trainee_chess_username", columnList = "chess_username"),
+        @Index(name = "idx_trainee_deleted_at", columnList = "deleted_at")
     }
 )
 public class Trainee extends AuditableEntity {
@@ -54,6 +56,9 @@ public class Trainee extends AuditableEntity {
     @Column(name = "chess_username", length = 80)
     private String chessUsername;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Attendance> attendanceRecords = new ArrayList<>();
 
@@ -71,6 +76,14 @@ public class Trainee extends AuditableEntity {
 
     @OneToOne(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private RapidRating rapidRating;
+
+    /**
+     * Check if this trainee is soft-deleted.
+     * @return true if deletedAt is set, false otherwise
+     */
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
 
 }
 

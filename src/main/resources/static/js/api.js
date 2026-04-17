@@ -1,5 +1,5 @@
 // This file contains reusable fetch-based API client helpers for frontend pages.
-const API_BASE = "/api";
+const API_BASE = "/api/v1";
 const GLOBAL_LOADER_ID = "globalLoadingOverlay";
 
 let globalLoaderEl = null;

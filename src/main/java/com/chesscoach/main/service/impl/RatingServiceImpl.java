@@ -13,6 +13,8 @@ import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.RatingService;
 import com.chesscoach.main.util.EloRatingCalculator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,16 +86,17 @@ public class RatingServiceImpl implements RatingService {
             .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TraineeRatingHistoryResponse> getRatingHistoryByTraineePaginated(Long traineeId, Pageable pageable) {
+        return ratingsHistoryRepository.findByTraineeIdOrderByCreatedAtDesc(traineeId, pageable)
+            .map(this::toRatingHistoryResponse);
+    }
+
     private void recomputeRankings() {
-        List<Trainee> trainees = traineeRepository.findAll();
-        trainees.sort((a, b) -> {
-            int ratingA = getRapidCurrentRating(a);
-            int ratingB = getRapidCurrentRating(b);
-            if (ratingA != ratingB) {
-                return Integer.compare(ratingB, ratingA); // descending
-            }
-            return Long.compare(a.getId(), b.getId()); // ascending by id
-        });
+        // Use JOIN FETCH query to load all trainees with ratings in single SQL (prevents N+1)
+        List<Trainee> trainees = traineeRepository.findAllWithRatingsOrderedByRating();
+        
         int rank = 1;
         for (Trainee trainee : trainees) {
             trainee.setRanking(rank++);

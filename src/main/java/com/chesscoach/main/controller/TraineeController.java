@@ -6,6 +6,8 @@ import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.dto.trainee.TraineeRequest;
 import com.chesscoach.main.dto.trainee.TraineeResponse;
 import com.chesscoach.main.service.TraineeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +28,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(ApiPaths.TRAINEES)
+@Tag(name = "Trainees", description = "APIs for managing trainee records, ratings, and photos")
 public class TraineeController {
 
     private final TraineeService traineeService;
@@ -40,6 +43,7 @@ public class TraineeController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new trainee", description = "Create a new trainee with initial ratings of 1200")
     public ResponseEntity<ApiResponse<TraineeResponse>> create(
         @Valid @RequestBody TraineeRequest requestBody,
         HttpServletRequest request
@@ -50,6 +54,7 @@ public class TraineeController {
     }
 
     @GetMapping
+    @Operation(summary = "List all trainees", description = "Get list of trainees with optional filtering by search, rating, and department")
     public ResponseEntity<ApiResponse<List<TraineeResponse>>> list(
         @RequestParam(required = false) String search,
         @RequestParam(required = false) Integer ratingMin,
@@ -71,6 +76,7 @@ public class TraineeController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get trainee by ID", description = "Retrieve detailed information about a specific trainee")
     public ResponseEntity<ApiResponse<TraineeResponse>> getById(
         @PathVariable Long id,
         HttpServletRequest request
@@ -80,6 +86,7 @@ public class TraineeController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update trainee information", description = "Update trainee details including name, age, ratings, and chess username")
     public ResponseEntity<ApiResponse<TraineeResponse>> update(
         @PathVariable Long id,
         @Valid @RequestBody TraineeRequest requestBody,
@@ -90,6 +97,7 @@ public class TraineeController {
     }
 
     @PostMapping(value = "/{id}/photo", consumes = "multipart/form-data")
+    @Operation(summary = "Upload trainee photo", description = "Upload or update trainee profile photo (max 5MB)")
     public ResponseEntity<ApiResponse<TraineeResponse>> uploadPhoto(
         @PathVariable Long id,
         @RequestParam("file") MultipartFile file,
@@ -100,6 +108,7 @@ public class TraineeController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a trainee", description = "Perform soft delete on a trainee record")
     public ResponseEntity<ApiResponse<Void>> delete(
         @PathVariable Long id,
         HttpServletRequest request
@@ -109,6 +118,7 @@ public class TraineeController {
     }
 
     @DeleteMapping("/reset-test-data")
+    @Operation(summary = "Reset test data", description = "Clear all trainee test data (development only)")
     public ResponseEntity<ApiResponse<Void>> resetTestData(
         @RequestParam(defaultValue = "false") boolean confirm,
         HttpServletRequest request

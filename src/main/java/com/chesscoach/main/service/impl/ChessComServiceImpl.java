@@ -12,7 +12,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +39,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @Service
 public class ChessComServiceImpl implements ChessComService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChessComServiceImpl.class);
+
     private final ObjectMapper objectMapper;
     private final TraineeRepository traineeRepository;
     private final RatingsHistoryRepository ratingsHistoryRepository;
@@ -49,6 +55,15 @@ public class ChessComServiceImpl implements ChessComService {
     @Value("${app.chesscom.timeout-seconds:15}")
     private int timeoutSeconds;
 
+    @Value("${app.chesscom.retry-max-attempts:3}")
+    private int maxRetries;
+
+    @Value("${app.chesscom.retry-backoff-multiplier:2}")
+    private int backoffMultiplier;
+
+    @Value("${app.rating.default:1200}")
+    private int defaultRating;
+
     public ChessComServiceImpl(
         ObjectMapper objectMapper,
         TraineeRepository traineeRepository,
@@ -60,24 +75,34 @@ public class ChessComServiceImpl implements ChessComService {
     }
 
     @Override
+    @Cacheable(value = "chesscom_ratings", key = "#username", unless = "#result == null")
     public ChessComRatingResponse getRatings(String username) {
         String normalizedUsername = normalizeUsername(username);
-        JsonNode stats = fetchJson("player/" + encode(normalizedUsername) + "/stats");
-        ChessComRatingResponse response = new ChessComRatingResponse();
-        response.setUsername(normalizedUsername);
+        log.info("Fetching Chess.com ratings for username: {}", normalizedUsername);
         
-        // Current ratings
-        response.setRapid(getRating(stats, "chess_rapid", "last"));
-        response.setBlitz(getRating(stats, "chess_blitz", "last"));
-        response.setBullet(getRating(stats, "chess_bullet", "last"));
-        
-        // Best/Peak ratings
-        response.setRapidBest(getRating(stats, "chess_rapid", "best"));
-        response.setBlitzBest(getRating(stats, "chess_blitz", "best"));
-        response.setBulletBest(getRating(stats, "chess_bullet", "best"));
-        
-        response.setPuzzleRush(getPuzzleRush(stats));
-        return response;
+        try {
+            JsonNode stats = fetchJsonWithRetry("player/" + encode(normalizedUsername) + "/stats");
+            ChessComRatingResponse response = new ChessComRatingResponse();
+            response.setUsername(normalizedUsername);
+            
+            // Current ratings
+            response.setRapid(getRating(stats, "chess_rapid", "last"));
+            response.setBlitz(getRating(stats, "chess_blitz", "last"));
+            response.setBullet(getRating(stats, "chess_bullet", "last"));
+            
+            // Best/Peak ratings
+            response.setRapidBest(getRating(stats, "chess_rapid", "best"));
+            response.setBlitzBest(getRating(stats, "chess_blitz", "best"));
+            response.setBulletBest(getRating(stats, "chess_bullet", "best"));
+            
+            response.setPuzzleRush(getPuzzleRush(stats));
+            log.debug("Successfully fetched ratings for {}: rapid={}, blitz={}, bullet={}", 
+                normalizedUsername, response.getRapid(), response.getBlitz(), response.getBullet());
+            return response;
+        } catch (Exception ex) {
+            log.warn("Failed to fetch Chess.com ratings for {}: {}", normalizedUsername, ex.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -152,6 +177,7 @@ public class ChessComServiceImpl implements ChessComService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "chesscom_ratings", key = "#traineeId")
     public ChessComSyncRatingResponse syncTraineeRating(Long traineeId, String mode) {
         String normalizedMode = normalizeMode(mode);
         Trainee trainee = traineeRepository.findById(traineeId)
@@ -161,7 +187,14 @@ public class ChessComServiceImpl implements ChessComService {
             throw new IllegalArgumentException("Trainee has no chessUsername configured");
         }
 
+        log.info("Syncing Chess.com ratings for trainee {} ({}), mode: {}", traineeId, trainee.getChessUsername(), normalizedMode);
+        
         ChessComRatingResponse ratings = getRatings(trainee.getChessUsername());
+        if (ratings == null) {
+            log.warn("Failed to sync ratings: Chess.com API returned null for trainee {}", traineeId);
+            throw new IllegalStateException("Failed to fetch ratings from Chess.com");
+        }
+        
         Integer rapid = ratings.getRapid();
         Integer rapidBest = ratings.getRapidBest();
         Integer blitz = ratings.getBlitz();
@@ -190,6 +223,7 @@ public class ChessComServiceImpl implements ChessComService {
             }
         }
         if (target == null) {
+            log.error("No rapid/blitz/bullet rating found for user {}", trainee.getChessUsername());
             throw new IllegalStateException("No rapid/blitz/bullet rating found for user " + trainee.getChessUsername());
         }
 
@@ -206,6 +240,8 @@ public class ChessComServiceImpl implements ChessComService {
         history.setNotes("Synced from Chess.com " + resolvedMode + " rating");
         ratingsHistoryRepository.save(history);
 
+        log.info("Successfully synced rating for trainee {}: {} -> {} ({})", traineeId, oldRating, target, resolvedMode);
+        
         ChessComSyncRatingResponse response = new ChessComSyncRatingResponse();
         response.setTraineeId(traineeId);
         response.setChessUsername(trainee.getChessUsername());
@@ -269,12 +305,12 @@ public class ChessComServiceImpl implements ChessComService {
     private int getRatingForMode(Trainee trainee, String mode) {
         return switch (mode) {
             case "rapid" -> trainee.getRapidRating() != null && trainee.getRapidRating().getCurrentRating() != null 
-                ? trainee.getRapidRating().getCurrentRating() : 1200; // TODO: use configurable default
+                ? trainee.getRapidRating().getCurrentRating() : defaultRating;
             case "blitz" -> trainee.getBlitzRating() != null && trainee.getBlitzRating().getCurrentRating() != null 
-                ? trainee.getBlitzRating().getCurrentRating() : 1200; // TODO: use configurable default
+                ? trainee.getBlitzRating().getCurrentRating() : defaultRating;
             case "bullet" -> trainee.getBulletRating() != null && trainee.getBulletRating().getCurrentRating() != null 
-                ? trainee.getBulletRating().getCurrentRating() : 1200; // TODO: use configurable default
-            default -> 1200; // TODO: use configurable default
+                ? trainee.getBulletRating().getCurrentRating() : defaultRating;
+            default -> defaultRating;
         };
     }
 
@@ -308,6 +344,43 @@ public class ChessComServiceImpl implements ChessComService {
         return fetchJsonUri(URI.create(absoluteUrl));
     }
 
+    private JsonNode fetchJsonWithRetry(String path) {
+        return fetchJsonUriWithRetry(URI.create(buildFullUrl(path)), 1);
+    }
+
+    private String buildFullUrl(String path) {
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+        if (normalizedBaseUrl.endsWith("/player") && normalizedPath.startsWith("player/")) {
+            normalizedPath = normalizedPath.substring("player/".length());
+        }
+        return normalizedBaseUrl + "/" + normalizedPath;
+    }
+
+    private JsonNode fetchJsonUriWithRetry(URI uri, int attemptNumber) {
+        try {
+            return fetchJsonUri(uri);
+        } catch (Exception ex) {
+            if (attemptNumber >= maxRetries) {
+                log.error("All {} attempts failed for Chess.com API call to {}: {}", attemptNumber, uri, ex.getMessage());
+                throw ex;
+            }
+
+            long delayMs = (long) Math.pow(backoffMultiplier, attemptNumber - 1) * 1000;
+            log.warn("Chess.com API call failed (attempt {}/{}), retrying in {}ms: {}", 
+                attemptNumber, maxRetries, delayMs, ex.getMessage());
+
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Retry sleep was interrupted", ie);
+            }
+
+            return fetchJsonUriWithRetry(uri, attemptNumber + 1);
+        }
+    }
+
     private JsonNode fetchJsonUri(URI uri) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -317,10 +390,18 @@ public class ChessComServiceImpl implements ChessComService {
                 .timeout(Duration.ofSeconds(Math.max(1, timeoutSeconds)))
                 .GET()
                 .build();
+            
+            log.debug("Making Chess.com API request to: {}", uri);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            if (response.statusCode() >= 500) {
+                throw new IllegalStateException("Chess.com API server error: HTTP " + response.statusCode());
+            }
             if (response.statusCode() >= 400) {
+                log.warn("Chess.com API error: HTTP {} for {}", response.statusCode(), uri);
                 throw new IllegalStateException("Chess.com API error: HTTP " + response.statusCode());
             }
+            
             return objectMapper.readTree(response.body());
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();

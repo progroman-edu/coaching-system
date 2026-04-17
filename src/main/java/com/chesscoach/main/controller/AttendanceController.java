@@ -6,6 +6,8 @@ import com.chesscoach.main.dto.attendance.AttendanceRecordRequest;
 import com.chesscoach.main.dto.attendance.AttendanceReportResponse;
 import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.service.AttendanceService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(ApiPaths.ATTENDANCE)
+@Tag(name = "Attendance", description = "APIs for recording and reporting trainee attendance")
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
@@ -31,6 +34,7 @@ public class AttendanceController {
     }
 
     @PostMapping
+    @Operation(summary = "Record attendance", description = "Record a trainee's attendance for a specific date")
     public ResponseEntity<ApiResponse<AttendanceRecordRequest>> recordAttendance(
         @Valid @RequestBody AttendanceRecordRequest requestBody,
         HttpServletRequest request
@@ -41,6 +45,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/report")
+    @Operation(summary = "Get attendance report", description = "Get attendance report for date range, optionally filtered by trainee")
     public ResponseEntity<ApiResponse<List<AttendanceReportResponse>>> getAttendanceReport(
         @RequestParam LocalDate startDate,
         @RequestParam LocalDate endDate,

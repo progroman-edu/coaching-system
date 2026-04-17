@@ -15,6 +15,8 @@ import com.chesscoach.main.repository.CoachRepository;
 import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.ReportService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,18 +30,21 @@ import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    private static final String DEFAULT_COACH_EMAIL = "coach@local";
+    private static final Logger log = LoggerFactory.getLogger(ReportServiceImpl.class);
     private static final int MAX_IMPORT_ERRORS = 100;
+    private static final int MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
     private final TraineeRepository traineeRepository;
     private final AttendanceRepository attendanceRepository;
@@ -48,6 +53,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Value("${app.report.export-dir:uploads/reports}")
     private String exportDir;
+
+    @Value("${app.coach.default-email:coach@local}")
+    private String defaultCoachEmail;
 
     public ReportServiceImpl(
         TraineeRepository traineeRepository,
@@ -69,15 +77,17 @@ public class ReportServiceImpl implements ReportService {
             throw new IllegalArgumentException("Only CSV export is currently supported");
         }
 
+        log.info("Exporting report: type={}, format={}", normalizedType, normalizedFormat);
         String fileName = normalizedType + "-report-" + OffsetDateTime.now().toEpochSecond() + ".csv";
         Path exportPath = Paths.get(exportDir).toAbsolutePath().normalize().resolve(fileName);
         writeCsvExport(normalizedType, exportPath);
 
+        log.debug("Report exported successfully: {}", fileName);
         ReportExportResponse response = new ReportExportResponse();
         response.setType(normalizedType);
         response.setFormat(normalizedFormat);
         response.setFileName(fileName);
-        response.setDownloadPath("/api/reports/download/" + fileName);
+        response.setDownloadPath("/api/v1/reports/download/" + fileName);
         return response;
     }
 
@@ -87,10 +97,18 @@ public class ReportServiceImpl implements ReportService {
             throw new IllegalArgumentException("CSV file is required");
         }
 
+        if (file.getSize() > MAX_FILE_SIZE) {
+            log.warn("File import rejected: file size {} exceeds maximum {}", file.getSize(), MAX_FILE_SIZE);
+            throw new IllegalArgumentException("File size exceeds maximum allowed: " + MAX_FILE_SIZE);
+        }
+
+        log.info("Importing trainees from file: {}", file.getOriginalFilename());
+        
         int totalRows = 0;
         int successRows = 0;
         int failedRows = 0;
         List<String> errors = new ArrayList<>();
+        Set<String> seenNames = new HashSet<>();
 
         Coach coach = getOrCreateDefaultCoach();
 
@@ -108,19 +126,30 @@ public class ReportServiceImpl implements ReportService {
                 }
                 totalRows++;
                 try {
+                    // Validate row format before processing
+                    String name = validateAndExtractName(line, columns);
+                    if (seenNames.contains(name)) {
+                        throw new IllegalArgumentException("Duplicate trainee name in import: " + name);
+                    }
+                    seenNames.add(name);
+                    
                     upsertTraineeFromCsv(line, coach, columns);
                     successRows++;
                 } catch (Exception ex) {
                     failedRows++;
+                    log.warn("Failed to import row {}: {}", totalRows, ex.getMessage());
                     if (errors.size() < MAX_IMPORT_ERRORS) {
                         errors.add("Row " + totalRows + ": " + ex.getMessage());
                     }
                 }
             }
         } catch (Exception ex) {
+            log.error("Failed to read import file: {}", ex.getMessage());
             throw new IllegalArgumentException("Failed to read import file: " + ex.getMessage());
         }
 
+        log.info("Import completed: total={}, success={}, failed={}", totalRows, successRows, failedRows);
+        
         ReportImportResponse response = new ReportImportResponse();
         response.setFileName(file.getOriginalFilename());
         response.setTotalRows(totalRows);
@@ -140,7 +169,9 @@ public class ReportServiceImpl implements ReportService {
                 default -> throw new IllegalArgumentException("Unsupported report type: " + type);
             };
             Files.write(targetPath, lines, StandardCharsets.UTF_8);
+            log.debug("CSV export written to: {}", targetPath);
         } catch (IOException ex) {
+            log.error("Failed to write export file: {}", ex.getMessage());
             throw new IllegalStateException("Failed to write export file: " + ex.getMessage(), ex);
         }
     }
@@ -236,6 +267,12 @@ public class ReportServiceImpl implements ReportService {
             throw new IllegalArgumentException("Missing required trainee values");
         }
 
+        // Validate for injection attempts
+        if (containsSuspiciousContent(name) || containsSuspiciousContent(address) || 
+            containsSuspiciousContent(gradeLevel) || containsSuspiciousContent(department)) {
+            throw new IllegalArgumentException("Invalid characters detected in input fields");
+        }
+
         Optional<Trainee> existing = traineeRepository.findByNameIgnoreCaseAndCoachId(name, coach.getId());
         Trainee trainee = existing.orElseGet(Trainee::new);
         trainee.setCoach(coach);
@@ -277,6 +314,26 @@ public class ReportServiceImpl implements ReportService {
         bullet.setHighestRating(bulletHighestRating != null ? bulletHighestRating : bullet.getCurrentRating());
         
         traineeRepository.save(trainee);
+        log.debug("Trainee upserted: {}", name);
+    }
+
+    private String validateAndExtractName(String line, CsvColumns columns) {
+        String[] raw = splitCsv(line);
+        String name = clean(getCell(raw, columns, "name", 0));
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("Trainee name is required");
+        }
+        return name;
+    }
+
+    private boolean containsSuspiciousContent(String value) {
+        if (value == null) return false;
+        // Check for SQL injection patterns, script tags, and path traversal
+        String lower = value.toLowerCase();
+        return lower.contains("<?") || lower.contains("?>") || lower.contains("<!--") || 
+               lower.contains("-->") || lower.contains("script") || lower.contains("../") ||
+               lower.contains("..\\") || value.contains(";") || value.contains("'") ||
+               value.contains("\"") && !value.contains("\\\"");
     }
 
     private static String getCell(String[] raw, CsvColumns columns, String header, int fallbackWithoutId) {
@@ -289,11 +346,11 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private Coach getOrCreateDefaultCoach() {
-        return coachRepository.findByEmail(DEFAULT_COACH_EMAIL)
+        return coachRepository.findByEmail(defaultCoachEmail)
             .orElseGet(() -> {
                 Coach coach = new Coach();
                 coach.setFullName("Default Coach");
-                coach.setEmail(DEFAULT_COACH_EMAIL);
+                coach.setEmail(defaultCoachEmail);
                 coach.setPhone("N/A");
                 return coachRepository.save(coach);
             });

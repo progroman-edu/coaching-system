@@ -41,7 +41,6 @@ import java.util.List;
 @Service
 public class TraineeServiceImpl implements TraineeService {
 
-    private static final String DEFAULT_COACH_EMAIL = "coach@local";
     private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     private final TraineeRepository traineeRepository;
@@ -61,6 +60,15 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Value("${app.rating.default:1200}")
     private int defaultRating;
+
+    @Value("${app.coach.default-email:coach@local}")
+    private String defaultCoachEmail;
+
+    @Value("${app.coach.default-name:Default Coach}")
+    private String defaultCoachName;
+
+    @Value("${app.coach.default-phone:N/A}")
+    private String defaultCoachPhone;
 
     public TraineeServiceImpl(
         TraineeRepository traineeRepository,
@@ -152,12 +160,15 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!traineeRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Trainee not found: " + id);
+        Trainee trainee = getTraineeOrThrow(id);
+        if (trainee.getDeletedAt() != null) {
+            throw new ResourceNotFoundException("Trainee already deleted: " + id);
         }
-        traineeRepository.deleteById(id);
+        // Soft delete: mark with deletedAt timestamp instead of hard delete
+        trainee.setDeletedAt(OffsetDateTime.now());
+        traineeRepository.save(trainee);
         recomputeRankings();
-        resetAutoIncrementIfNoTrainees();
+        log.info("Trainee soft-deleted: {} at {}", id, trainee.getDeletedAt());
     }
 
     @Override
@@ -179,12 +190,12 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     private Coach getOrCreateDefaultCoach() {
-        return coachRepository.findByEmail(DEFAULT_COACH_EMAIL)
+        return coachRepository.findByEmail(defaultCoachEmail)
             .orElseGet(() -> {
                 Coach coach = new Coach();
-                coach.setFullName("Default Coach");
-                coach.setEmail(DEFAULT_COACH_EMAIL);
-                coach.setPhone("N/A");
+                coach.setFullName(defaultCoachName);
+                coach.setEmail(defaultCoachEmail);
+                coach.setPhone(defaultCoachPhone);
                 return coachRepository.save(coach);
             });
     }
@@ -195,8 +206,28 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setAddress(request.getAddress());
         trainee.setGradeLevel(request.getGradeLevel());
         trainee.setDepartment(request.getDepartment());
-        trainee.setPhotoPath(request.getPhotoPath());
+        trainee.setPhotoPath(validatePhotoPath(request.getPhotoPath()));
         trainee.setChessUsername(normalizeUsername(request.getChessUsername()));
+    }
+
+    private String validatePhotoPath(String photoPath) {
+        if (photoPath == null || photoPath.trim().isEmpty()) {
+            return null;
+        }
+        
+        String normalized = photoPath.trim();
+        
+        // Security: Prevent directory traversal attacks
+        if (normalized.contains("..") || normalized.contains("\\") || normalized.startsWith("/")) {
+            throw new IllegalArgumentException("Invalid photo path: path traversal detected");
+        }
+        
+        // Only allow expected photo paths from the configured upload directory
+        if (!normalized.startsWith("uploads/") && !normalized.startsWith("trainee_photos/")) {
+            throw new IllegalArgumentException("Invalid photo path: must be in uploads or trainee_photos directory");
+        }
+        
+        return normalized;
     }
 
     private void applyRatingsFromChessCom(Trainee trainee, String chessUsername) {

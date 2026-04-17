@@ -6,6 +6,8 @@ import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.dto.report.ReportExportResponse;
 import com.chesscoach.main.dto.report.ReportImportResponse;
 import com.chesscoach.main.service.ReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -27,6 +29,7 @@ import java.nio.file.Paths;
 
 @RestController
 @RequestMapping(ApiPaths.REPORTS)
+@Tag(name = "Reports", description = "APIs for importing and exporting trainee and match data")
 public class ReportController {
 
     private final ReportService reportService;
@@ -39,6 +42,7 @@ public class ReportController {
     }
 
     @GetMapping("/export")
+    @Operation(summary = "Export report data", description = "Export trainee, attendance, or match data to CSV format")
     public ResponseEntity<ApiResponse<ReportExportResponse>> export(
         @RequestParam String type,
         @RequestParam String format,
@@ -49,6 +53,7 @@ public class ReportController {
     }
 
     @PostMapping("/import/trainees")
+    @Operation(summary = "Import trainees", description = "Import trainee data from CSV file with validation and duplicate checking")
     public ResponseEntity<ApiResponse<ReportImportResponse>> importTrainees(
         @RequestParam("file") MultipartFile file,
         HttpServletRequest request
@@ -58,6 +63,7 @@ public class ReportController {
     }
 
     @GetMapping("/download/{fileName:.+}")
+    @Operation(summary = "Download report file", description = "Download previously exported report file with path traversal protection")
     public ResponseEntity<Resource> download(@PathVariable String fileName) throws MalformedURLException {
         Path file = Paths.get(exportDir).toAbsolutePath().normalize().resolve(fileName).normalize();
         Path base = Paths.get(exportDir).toAbsolutePath().normalize();

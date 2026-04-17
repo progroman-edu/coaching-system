@@ -10,6 +10,8 @@ import com.chesscoach.main.dto.match.MatchSummaryResponse;
 import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
 import com.chesscoach.main.service.MatchService;
 import com.chesscoach.main.service.RatingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(ApiPaths.MATCHES)
+@Tag(name = "Matches", description = "APIs for managing chess matches, pairings, and results")
 public class MatchController {
 
     private final MatchService matchService;
@@ -36,6 +39,7 @@ public class MatchController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new match", description = "Create a new match between specified trainees")
     public ResponseEntity<ApiResponse<MatchSummaryResponse>> createMatch(
         @Valid @RequestBody MatchCreateRequest requestBody,
         HttpServletRequest request
@@ -46,6 +50,7 @@ public class MatchController {
     }
 
     @PostMapping("/generate/swiss")
+    @Operation(summary = "Generate Swiss pairings", description = "Generate Swiss system pairings for a round")
     public ResponseEntity<ApiResponse<List<MatchSummaryResponse>>> generateSwiss(
         @Valid @RequestBody MatchGenerationRequest requestBody,
         HttpServletRequest request
@@ -55,6 +60,7 @@ public class MatchController {
     }
 
     @PostMapping("/generate/round-robin")
+    @Operation(summary = "Generate Round Robin pairings", description = "Generate Round Robin pairings for a round")
     public ResponseEntity<ApiResponse<List<MatchSummaryResponse>>> generateRoundRobin(
         @Valid @RequestBody MatchGenerationRequest requestBody,
         HttpServletRequest request
@@ -64,6 +70,7 @@ public class MatchController {
     }
 
     @PostMapping("/result")
+    @Operation(summary = "Record match result", description = "Record the result of a completed match")
     public ResponseEntity<ApiResponse<MatchResultRequest>> recordResult(
         @Valid @RequestBody MatchResultRequest requestBody,
         HttpServletRequest request
@@ -73,6 +80,7 @@ public class MatchController {
     }
 
     @GetMapping("/history/{traineeId}")
+    @Operation(summary = "Get match history", description = "Get all matches involving a specific trainee")
     public ResponseEntity<ApiResponse<List<MatchSummaryResponse>>> getHistoryByTrainee(
         @PathVariable Long traineeId,
         HttpServletRequest request
@@ -82,6 +90,7 @@ public class MatchController {
     }
 
     @GetMapping("/history/{traineeId}/ratings")
+    @Operation(summary = "Get rating history", description = "Get rating change history for a specific trainee")
     public ResponseEntity<ApiResponse<List<TraineeRatingHistoryResponse>>> getRatingHistoryByTrainee(
         @PathVariable Long traineeId,
         HttpServletRequest request

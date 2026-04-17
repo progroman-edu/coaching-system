@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +26,7 @@ import java.time.OffsetDateTime;
 @Table(
     name = "match_results",
     uniqueConstraints = {
+        @UniqueConstraint(name = "uk_match_result_one_per_match", columnNames = {"match_id"}),
         @UniqueConstraint(name = "uk_match_result_match_players", columnNames = {"match_id", "white_trainee_id", "black_trainee_id"})
     },
     indexes = {
@@ -39,6 +41,10 @@ public class MatchResult extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "match_id", nullable = false)

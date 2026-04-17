@@ -2,6 +2,8 @@
 package com.chesscoach.main.repository;
 
 import com.chesscoach.main.model.RatingsHistory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,5 +11,7 @@ import java.util.List;
 public interface RatingsHistoryRepository extends JpaRepository<RatingsHistory, Long> {
 
     List<RatingsHistory> findByTraineeIdOrderByCreatedAtDesc(Long traineeId);
+    
+    Page<RatingsHistory> findByTraineeIdOrderByCreatedAtDesc(Long traineeId, Pageable pageable);
 }
 

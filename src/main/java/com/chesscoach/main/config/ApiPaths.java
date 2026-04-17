@@ -3,7 +3,7 @@ package com.chesscoach.main.config;
 
 public final class ApiPaths {
 
-    public static final String BASE = "/api";
+    public static final String BASE = "/api/v1";
     public static final String TRAINEES = BASE + "/trainees";
     public static final String ATTENDANCE = BASE + "/attendance";
     public static final String MATCHES = BASE + "/matches";

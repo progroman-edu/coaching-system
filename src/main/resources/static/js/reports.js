@@ -18,16 +18,16 @@ function clearDownloadLink() {
     }
 }
 
-function setDownloadLink(path) {
+function setDownloadLink(fileName) {
     if (!downloadLink || !downloadWrap) {
         return;
     }
-    const href = String(path ?? "").trim();
-    if (!href) {
+    const name = String(fileName ?? "").trim();
+    if (!name) {
         clearDownloadLink();
         return;
     }
-    downloadLink.setAttribute("href", href);
+    downloadLink.setAttribute("href", `/api/v1/reports/download/${encodeURIComponent(name)}`);
     downloadWrap.style.display = "block";
 }
 
@@ -38,8 +38,8 @@ exportForm?.addEventListener("submit", async (e) => {
     try {
         const data = await api.exportReport(payload.type, payload.format);
         output.textContent = JSON.stringify(data, null, 2);
-        if (data?.downloadPath) {
-            setDownloadLink(data.downloadPath);
+        if (data?.fileName) {
+            setDownloadLink(data.fileName);
         }
         showMessage(msg, "Export metadata generated.");
     } catch (err) {

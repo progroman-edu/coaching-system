@@ -16,6 +16,8 @@ import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.AnalyticsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,8 @@ import java.util.List;
 
 @Service
 public class AnalyticsServiceImpl implements AnalyticsService {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsServiceImpl.class);
 
     private final TraineeRepository traineeRepository;
     private final AttendanceRepository attendanceRepository;
@@ -59,6 +63,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     @Transactional(readOnly = true)
     public DashboardAnalyticsResponse getDashboard() {
+        log.info("Generating dashboard analytics");
+        
         List<Trainee> trainees = traineeRepository.findAll();
         List<Attendance> attendance = attendanceRepository.findAll();
 
@@ -67,18 +73,24 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             : trainees.stream().mapToInt(this::getRapidCurrentRating).average().orElse(0.0);
         long presentCount = attendance.stream().filter(a -> Boolean.TRUE.equals(a.getPresent())).count();
         double attendancePercentage = attendance.isEmpty() ? 0.0 : (presentCount * 100.0) / attendance.size();
+        long matchesPlayed = matchResultRepository.count();
+
+        log.debug("Dashboard metrics: trainees={}, avgRating={}, attendance={}%, matches={}", 
+            trainees.size(), averageRating, attendancePercentage, matchesPlayed);
 
         DashboardAnalyticsResponse response = new DashboardAnalyticsResponse();
         response.setTotalTrainees(trainees.size());
         response.setAverageRating(averageRating);
         response.setAttendancePercentage(attendancePercentage);
-        response.setMatchesPlayed((int) matchResultRepository.count());
+        response.setMatchesPlayed((int) matchesPlayed);
         return response;
     }
 
     @Override
     @Transactional(readOnly = true)
     public TraineePerformanceResponse getPerformance(Long traineeId) {
+        log.info("Generating performance analytics for trainee: {}", traineeId);
+        
         Trainee trainee = traineeRepository.findById(traineeId)
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + traineeId));
 
@@ -119,6 +131,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             ? getRapidHighestRating(trainee)
             : history.stream().mapToInt(RatingsHistory::getNewRating).max().orElse(currentRating);
 
+        log.debug("Performance metrics for trainee {}: rating={}, record={}-{}-{}, attendance={}%", 
+            traineeId, currentRating, wins, losses, draws, attendancePercentage);
+
         TraineePerformanceResponse response = new TraineePerformanceResponse();
         response.setTraineeId(trainee.getId());
         response.setTraineeName(trainee.getName());
@@ -135,6 +150,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     @Transactional(readOnly = true)
     public List<RatingTrendPointResponse> getRatingTrend(Long traineeId) {
+        log.debug("Retrieving rating trend for trainee: {}", traineeId);
+        
         traineeRepository.findById(traineeId)
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + traineeId));
 

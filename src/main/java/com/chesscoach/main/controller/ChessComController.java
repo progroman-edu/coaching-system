@@ -8,6 +8,8 @@ import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.service.ChessComService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(ApiPaths.CHESSCOM)
+@Tag(name = "Chess.com Integration", description = "APIs for syncing ratings and viewing match history from Chess.com")
 public class ChessComController {
 
     private final ChessComService chessComService;
@@ -30,6 +33,7 @@ public class ChessComController {
     }
 
     @GetMapping("/{username}/rating")
+    @Operation(summary = "Get Chess.com ratings", description = "Fetch current and best ratings from Chess.com for a player (cached). INTERNAL/BETA - Not currently used in UI")
     public ResponseEntity<ApiResponse<ChessComRatingResponse>> getRatings(
         @PathVariable String username,
         HttpServletRequest request
@@ -39,6 +43,7 @@ public class ChessComController {
     }
 
     @GetMapping("/{username}/match-history/archives")
+    @Operation(summary = "Get game archives", description = "List available game archive URLs for a Chess.com player. INTERNAL/BETA - Not currently used in UI")
     public ResponseEntity<ApiResponse<Object>> getArchives(
         @PathVariable String username,
         HttpServletRequest request
@@ -48,6 +53,7 @@ public class ChessComController {
     }
 
     @GetMapping("/{username}/match-history/{year}/{month}")
+    @Operation(summary = "Get monthly game history", description = "Fetch games played by a player in a specific month. INTERNAL/BETA - Not currently used in UI")
     public ResponseEntity<ApiResponse<Object>> getMonthlyHistory(
         @PathVariable String username,
         @PathVariable int year,
@@ -59,6 +65,7 @@ public class ChessComController {
     }
 
     @GetMapping("/{username}/match-history/all-modes")
+    @Operation(summary = "Get all games by mode", description = "Fetch all games grouped by time control (rapid, blitz, bullet, daily)")
     public ResponseEntity<ApiResponse<Object>> getAllModesHistory(
         @PathVariable String username,
         @RequestParam(required = false) Integer limitArchives,
@@ -69,6 +76,7 @@ public class ChessComController {
     }
 
     @PostMapping("/trainees/{traineeId}/sync-rating")
+    @Operation(summary = "Sync trainee rating", description = "Fetch and update trainee rating from Chess.com with rating history tracking")
     public ResponseEntity<ApiResponse<ChessComSyncRatingResponse>> syncRating(
         @PathVariable Long traineeId,
         @RequestParam(defaultValue = "rapid") String mode,

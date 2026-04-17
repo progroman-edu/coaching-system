@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TraineeRepository extends JpaRepository<Trainee, Long> {
@@ -16,7 +17,8 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
         SELECT t
         FROM Trainee t
         LEFT JOIN t.rapidRating r
-        WHERE (:search IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')))
+        WHERE t.deletedAt IS NULL
+          AND (:search IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')))
           AND (:ratingMin IS NULL OR r.currentRating >= :ratingMin)
           AND (:department IS NULL OR LOWER(t.department) LIKE LOWER(CONCAT('%', :department, '%')))
     """)
@@ -26,6 +28,23 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
         @Param("department") String department,
         Pageable pageable
     );
+
+    /**
+     * Find all trainees ordered by rapid rating (descending).
+     * Uses JOIN FETCH to load rapid ratings in a single query (prevents N+1).
+     * Excludes soft-deleted trainees.
+     * This is used for ranking recomputation.
+     *
+     * @return list of all active trainees with ratings loaded, ordered by rating desc
+     */
+    @Query("""
+        SELECT DISTINCT t
+        FROM Trainee t
+        LEFT JOIN FETCH t.rapidRating
+        WHERE t.deletedAt IS NULL
+        ORDER BY COALESCE(t.rapidRating.currentRating, 1200) DESC, t.id ASC
+    """)
+    List<Trainee> findAllWithRatingsOrderedByRating();
 
     Optional<Trainee> findByNameIgnoreCaseAndCoachId(String name, Long coachId);
 

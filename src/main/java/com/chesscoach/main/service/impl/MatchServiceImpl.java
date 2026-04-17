@@ -24,6 +24,8 @@ import com.chesscoach.main.service.MatchService;
 import com.chesscoach.main.service.RatingService;
 import com.chesscoach.main.util.RoundRobinGenerator;
 import com.chesscoach.main.util.SwissPairingGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MatchServiceImpl implements MatchService {
+
+    private static final Logger log = LoggerFactory.getLogger(MatchServiceImpl.class);
 
     private final MatchRepository matchRepository;
     private final MatchParticipantRepository matchParticipantRepository;
@@ -71,6 +75,8 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchSummaryResponse createMatch(MatchCreateRequest request) {
+        log.info("Creating match with trainees: {}", request.getTraineeIds());
+        
         MatchFormat format = parseFormat(request.getFormat());
         List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
         if (trainees.isEmpty()) {
@@ -82,12 +88,17 @@ public class MatchServiceImpl implements MatchService {
         Long whiteId = trainees.get(0).getId();
         Long blackId = trainees.size() > 1 ? trainees.get(1).getId() : null;
         Match match = createMatchRecord(format, 1, request.getScheduledDate(), whiteId, blackId);
+        
+        log.debug("Match created: id={}, format={}", match.getId(), format);
         return toSummary(match, traineesByIds(trainees), null);
     }
 
     @Override
     @Transactional
     public List<MatchSummaryResponse> generateSwiss(MatchGenerationRequest request) {
+        log.info("Generating Swiss pairings for {} trainees, round {}", 
+            request.getTraineeIds().size(), request.getRoundNumber());
+        
         List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
         List<Long> sortedIds = trainees.stream()
             .sorted(Comparator.comparing(this::getRapidCurrentRating).reversed())
@@ -97,15 +108,22 @@ public class MatchServiceImpl implements MatchService {
         Map<Long, Trainee> traineeMap = traineesByIds(trainees);
         List<MatchSummaryResponse> summaries = new ArrayList<>();
         for (SwissPairingGenerator.Pairing pairing : SwissPairingGenerator.generate(sortedIds)) {
-            Match match = createMatchRecord(MatchFormat.SWISS, request.getRoundNumber(), LocalDate.now(), pairing.whiteTraineeId(), pairing.blackTraineeId());
-            summaries.add(toSummary(match, traineeMap, pairing.blackTraineeId() == null ? "BYE" : null));
+            Match match = createMatchRecord(MatchFormat.SWISS, request.getRoundNumber(), LocalDate.now(), 
+                pairing.whiteTraineeId(), pairing.blackTraineeId());
+            String result = pairing.blackTraineeId() == null ? "BYE" : null;
+            summaries.add(toSummary(match, traineeMap, result));
         }
+        
+        log.debug("Generated {} Swiss pairings", summaries.size());
         return summaries;
     }
 
     @Override
     @Transactional
     public List<MatchSummaryResponse> generateRoundRobin(MatchGenerationRequest request) {
+        log.info("Generating Round Robin pairings for {} trainees, round {}", 
+            request.getTraineeIds().size(), request.getRoundNumber());
+        
         List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
         List<Long> ids = trainees.stream().map(Trainee::getId).toList();
         Map<Long, Trainee> traineeMap = traineesByIds(trainees);
@@ -119,17 +137,29 @@ public class MatchServiceImpl implements MatchService {
                 pairing.whiteTraineeId(),
                 pairing.blackTraineeId()
             );
-            summaries.add(toSummary(match, traineeMap, pairing.blackTraineeId() == null ? "BYE" : null));
+            String result = pairing.blackTraineeId() == null ? "BYE" : null;
+            summaries.add(toSummary(match, traineeMap, result));
         }
+        
+        log.debug("Generated {} Round Robin pairings", summaries.size());
         return summaries;
     }
 
     @Override
     @Transactional
     public MatchResultRequest recordResult(MatchResultRequest request) {
+        log.info("Recording match result for match: {}", request.getMatchId());
+        
         Match match = matchRepository.findById(request.getMatchId())
             .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + request.getMatchId()));
-        if (match.getStatus() == MatchStatus.COMPLETED || !matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId()).isEmpty()) {
+        
+        // Validate state transition
+        if (!MatchStatus.canTransitionTo(match.getStatus(), MatchStatus.COMPLETED)) {
+            throw new ConflictException("Cannot record result: match status " + match.getStatus() + 
+                " cannot transition to COMPLETED");
+        }
+        
+        if (!matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId()).isEmpty()) {
             throw new ConflictException("Result already recorded for match: " + match.getId());
         }
 
@@ -139,6 +169,7 @@ public class MatchServiceImpl implements MatchService {
         if (participants.size() != 2) {
             throw new IllegalArgumentException("Only 2-player matches can be recorded via this endpoint");
         }
+        
         Long expectedWhiteId = participants.stream()
             .filter(p -> p.getPieceColor() == PieceColor.WHITE)
             .map(p -> p.getTrainee().getId())
@@ -177,12 +208,18 @@ public class MatchServiceImpl implements MatchService {
 
         match.setStatus(MatchStatus.COMPLETED);
         matchRepository.save(match);
+        
+        log.info("Match result recorded: {} vs {}, result={}", 
+            white.getName(), black.getName(), result.getResultType());
+        
         return request;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MatchSummaryResponse> getHistoryByTrainee(Long traineeId) {
+        log.debug("Retrieving match history for trainee: {}", traineeId);
+        
         List<MatchResult> results = matchResultRepository
             .findByWhiteTraineeIdOrBlackTraineeIdOrderByPlayedAtDesc(traineeId, traineeId);
         return results.stream().map(result -> {

@@ -9,6 +9,8 @@ import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.AttendanceRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.AttendanceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,8 @@ import java.util.Map;
 
 @Service
 public class AttendanceServiceImpl implements AttendanceService {
+
+    private static final Logger log = LoggerFactory.getLogger(AttendanceServiceImpl.class);
 
     private final AttendanceRepository attendanceRepository;
     private final TraineeRepository traineeRepository;
@@ -44,12 +48,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendance.setPresent(request.getPresent());
         attendance.setRemarks(request.getRemarks());
         attendanceRepository.save(attendance);
+        
+        log.info("Attendance recorded for trainee {} on {}: present={}", 
+            request.getTraineeId(), request.getAttendanceDate(), request.getPresent());
+        
         return request;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AttendanceReportResponse> getAttendanceReport(LocalDate startDate, LocalDate endDate, Long traineeId) {
+        log.info("Generating attendance report: startDate={}, endDate={}, traineeId={}", startDate, endDate, traineeId);
+        
         if (traineeId != null) {
             return List.of(buildReportForTrainee(startDate, endDate, traineeId));
         }
@@ -64,6 +74,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         for (Map.Entry<Long, List<Attendance>> entry : byTrainee.entrySet()) {
             reports.add(toReport(startDate, endDate, entry.getValue()));
         }
+        
+        log.debug("Attendance report generated for {} trainees", reports.size());
         return reports;
     }
 
