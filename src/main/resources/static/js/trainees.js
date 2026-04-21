@@ -281,12 +281,7 @@ filterForm?.addEventListener("submit", async (e) => {
 tbody?.addEventListener("click", async (e) => {
     const viewId = e.target?.dataset?.view;
     if (viewId) {
-        const trainee = traineeCache.find((t) => Number(t.id) === Number(viewId));
-        if (!trainee) return;
-        showMessage(
-            msg,
-            `${trainee.name} • Rank #${trainee.ranking ?? "-"} • Current ${trainee.rapidCurrentRating ?? "-"} • Last activity ${formatLastActivity(trainee.lastActivityAt)}`
-        );
+        window.location.href = `/trainees/${viewId}`;
         return;
     }
 

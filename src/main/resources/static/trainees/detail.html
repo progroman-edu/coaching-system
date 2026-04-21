@@ -1,0 +1,308 @@
+<!-- This page displays detailed information about a single trainee. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <script src="/js/page-stability.js"></script>
+    <title>Trainee Profile</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .detail-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .detail-field {
+            background: var(--color-bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .detail-label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        .detail-value {
+            font-size: 1rem;
+            color: var(--color-text-primary);
+        }
+        .photo-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background: var(--color-bg-secondary);
+        }
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .rating-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 768px) {
+            .detail-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="title" id="traineeName">Loading...</h1>
+                    <p class="subtitle" id="traineeChessUsername"></p>
+                </div>
+                <button class="secondary" id="backBtn" type="button">← Back to Trainees</button>
+            </div>
+        </div>
+
+        <!-- Photo & Basic Info -->
+        <section class="panel">
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 2rem;">
+                <div>
+                    <div class="photo-container">
+                        <img id="traineePhoto" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' text-anchor='middle' dy='.3em' fill='%23999'%3E?%3C/text%3E%3C/svg%3E" alt="Photo">
+                    </div>
+                </div>
+                <div class="detail-section" style="margin-bottom: 0;">
+                    <div class="detail-field">
+                        <div class="detail-label">Full Name</div>
+                        <div class="detail-value" id="detailName">-</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-label">Age</div>
+                        <div class="detail-value" id="detailAge">-</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-label">Department</div>
+                        <div class="detail-value" id="detailDepartment">-</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-label">Grade Level</div>
+                        <div class="detail-value" id="detailGradeLevel">-</div>
+                    </div>
+                    <div class="detail-field" style="grid-column: 1 / -1;">
+                        <div class="detail-label">Address</div>
+                        <div class="detail-value" id="detailAddress">-</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rankings & Current Ratings -->
+        <section class="panel">
+            <h3>Current Ratings & Rankings</h3>
+            <div class="detail-section">
+                <div class="detail-field">
+                    <div class="detail-label">Overall Ranking</div>
+                    <div class="detail-value" id="detailRanking">-</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Last Activity</div>
+                    <div class="detail-value" id="detailLastActivity">-</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Rapid Rating</div>
+                    <div class="detail-value">
+                        <span class="rating-badge" id="detailRapidCurrent">1200</span>
+                        <span style="font-size: 0.875rem; margin-left: 0.5rem; color: var(--color-text-secondary);" id="detailRapidChange">-</span>
+                    </div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Blitz Rating</div>
+                    <div class="detail-value">
+                        <span class="rating-badge" id="detailBlitzCurrent">1200</span>
+                        <span style="font-size: 0.875rem; margin-left: 0.5rem; color: var(--color-text-secondary);" id="detailBlitzChange">-</span>
+                    </div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Bullet Rating</div>
+                    <div class="detail-value">
+                        <span class="rating-badge" id="detailBulletCurrent">1200</span>
+                        <span style="font-size: 0.875rem; margin-left: 0.5rem; color: var(--color-text-secondary);" id="detailBulletChange">-</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Peak Ratings -->
+        <section class="panel">
+            <h3>Peak Ratings (All Time)</h3>
+            <div class="detail-section">
+                <div class="detail-field">
+                    <div class="detail-label">Rapid Peak</div>
+                    <div class="detail-value" id="detailRapidPeak">-</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Blitz Peak</div>
+                    <div class="detail-value" id="detailBlitzPeak">-</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Bullet Peak</div>
+                    <div class="detail-value" id="detailBulletPeak">-</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">30-Day Attendance</div>
+                    <div class="detail-value" id="detailAttendance">-</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <section class="panel">
+            <div class="action-buttons">
+                <button id="editBtn" class="secondary" type="button">Edit Profile</button>
+                <button id="ratingHistoryBtn" class="secondary" type="button">View Rating History</button>
+                <button id="matchHistoryBtn" class="secondary" type="button">View Match History</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module">
+    import { api } from "../js/api.js";
+    import { showMessage } from "../js/ui.js";
+
+    const msg = document.getElementById("msg");
+    const backBtn = document.getElementById("backBtn");
+    const editBtn = document.getElementById("editBtn");
+    const ratingHistoryBtn = document.getElementById("ratingHistoryBtn");
+    const matchHistoryBtn = document.getElementById("matchHistoryBtn");
+
+    function getTraineeIdFromUrl() {
+        const parts = window.location.pathname.split("/");
+        return Number(parts[parts.length - 1]);
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return "-";
+        const date = new Date(dateStr);
+        if (Number.isNaN(date.getTime())) return "-";
+        return date.toLocaleDateString();
+    }
+
+    function formatRatingChange(change) {
+        if (change == null) return "-";
+        const val = Number(change);
+        if (val > 0) return `+${val}`;
+        if (val < 0) return `${val}`;
+        return "0";
+    }
+
+    async function loadTraineeDetail() {
+        const traineeId = getTraineeIdFromUrl();
+        if (!traineeId) {
+            showMessage(msg, "Invalid trainee ID", false);
+            backBtn.click();
+            return;
+        }
+
+        try {
+            const data = await api.listTrainees({ size: 1000 });
+            const trainee = data.find(t => t.id === traineeId);
+            
+            if (!trainee) {
+                showMessage(msg, "Trainee not found", false);
+                backBtn.click();
+                return;
+            }
+
+            // Header
+            document.getElementById("traineeName").textContent = trainee.name || "Unknown";
+            document.getElementById("traineeChessUsername").textContent = `Chess.com: ${trainee.chessUsername || "Not set"}`;
+
+            // Photo
+            if (trainee.photoPath) {
+                document.getElementById("traineePhoto").src = trainee.photoPath;
+            }
+
+            // Basic Info
+            document.getElementById("detailName").textContent = trainee.name || "-";
+            document.getElementById("detailAge").textContent = trainee.age ? `${trainee.age} years` : "-";
+            document.getElementById("detailDepartment").textContent = trainee.department || "-";
+            document.getElementById("detailGradeLevel").textContent = trainee.gradeLevel || "-";
+            document.getElementById("detailAddress").textContent = trainee.address || "-";
+
+            // Rankings & Activity
+            document.getElementById("detailRanking").textContent = trainee.ranking ? `#${trainee.ranking}` : "-";
+            document.getElementById("detailLastActivity").textContent = formatDate(trainee.lastActivityAt);
+
+            // Current Ratings
+            document.getElementById("detailRapidCurrent").textContent = trainee.rapidCurrentRating || "1200";
+            document.getElementById("detailBlitzCurrent").textContent = trainee.blitzCurrentRating || "1200";
+            document.getElementById("detailBulletCurrent").textContent = trainee.bulletCurrentRating || "1200";
+
+            // Latest change
+            document.getElementById("detailRapidChange").textContent = formatRatingChange(trainee.latestRatingChange);
+            document.getElementById("detailBlitzChange").textContent = "-";
+            document.getElementById("detailBulletChange").textContent = "-";
+
+            // Peak Ratings
+            document.getElementById("detailRapidPeak").textContent = trainee.rapidHighestRating || "-";
+            document.getElementById("detailBlitzPeak").textContent = trainee.blitzHighestRating || "-";
+            document.getElementById("detailBulletPeak").textContent = trainee.bulletHighestRating || "-";
+
+            // Attendance
+            const attendance = trainee.attendancePercentageLast30Days;
+            document.getElementById("detailAttendance").textContent = attendance != null ? `${Number(attendance).toFixed(1)}%` : "-";
+
+        } catch (err) {
+            showMessage(msg, `Error loading trainee: ${err.message}`, false);
+        }
+    }
+
+    backBtn.addEventListener("click", () => {
+        window.location.href = "/trainees.html";
+    });
+
+    editBtn.addEventListener("click", () => {
+        const traineeId = getTraineeIdFromUrl();
+        window.location.href = `/trainees.html?edit=${traineeId}`;
+    });
+
+    ratingHistoryBtn.addEventListener("click", () => {
+        const traineeId = getTraineeIdFromUrl();
+        window.location.href = `/match-history.html?traineeId=${traineeId}&tab=ratings`;
+    });
+
+    matchHistoryBtn.addEventListener("click", () => {
+        const traineeId = getTraineeIdFromUrl();
+        window.location.href = `/match-history.html?traineeId=${traineeId}`;
+    });
+
+    loadTraineeDetail();
+</script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

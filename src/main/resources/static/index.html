@@ -46,12 +46,20 @@
         </section>
 
         <section class="panel">
-            <h3>Rating Improvement Preview</h3>
-            <form id="trendForm" class="row">
-                <input type="number" id="trendTraineeId" placeholder="Trainee ID for trend" required>
-                <button class="secondary" type="submit">Load Trend</button>
-            </form>
-            <pre id="trendOutput">[]</pre>
+            <h3>Analytics & Reports</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                <a href="/analytics/performance.html" class="secondary" style="padding: 1rem; text-decoration: none; text-align: center; border-radius: 4px; display: block;">
+                    Performance Analytics
+                </a>
+                <div class="panel">
+                    <h3 style="margin-top: 0;">Rating Improvement Preview</h3>
+                    <form id="trendForm" class="row">
+                        <input type="number" id="trendTraineeId" placeholder="Trainee ID for trend" required>
+                        <button class="secondary" type="submit">Load Trend</button>
+                    </form>
+                    <pre id="trendOutput">[]</pre>
+                </div>
+            </div>
         </section>
     </main>
 </div>

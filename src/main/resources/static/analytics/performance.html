@@ -1,0 +1,236 @@
+<!-- This page displays trainee performance analytics. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <script src="/js/page-stability.js"></script>
+    <title>Trainee Performance</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--color-bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+        .record-bar {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .record-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--color-bg-primary);
+            border-radius: 4px;
+            flex: 1;
+        }
+        .record-num {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .record-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--color-text-secondary);
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 class="title">Trainee Performance Analysis</h1>
+                    <p class="subtitle" id="performanceSubtitle">Select a trainee to view performance metrics</p>
+                </div>
+                <button class="secondary" id="backBtn" type="button">← Back</button>
+            </div>
+        </div>
+
+        <!-- Trainee Selection -->
+        <section class="panel">
+            <form id="performanceForm" class="row">
+                <select id="traineeSelect" required>
+                    <option value="">Select a trainee...</option>
+                </select>
+                <button class="secondary" type="submit">Load Performance</button>
+            </form>
+        </section>
+
+        <!-- Performance Stats -->
+        <section class="panel" id="performanceSection" style="display: none;">
+            <h3 id="performanceTraineeName">Performance Metrics</h3>
+            
+            <!-- Key Stats -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-matches">0</div>
+                    <div class="stat-label">Matches Played</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-current">1200</div>
+                    <div class="stat-label">Current Rating</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-highest">1200</div>
+                    <div class="stat-label">Peak Rating</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-attendance">-</div>
+                    <div class="stat-label">Attendance %</div>
+                </div>
+            </div>
+
+            <!-- Win/Loss/Draw Record -->
+            <div class="panel" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h4 style="margin-top: 0; margin-bottom: 1rem;">Match Record</h4>
+                <div class="record-bar">
+                    <div class="record-item" style="border-left: 4px solid #4caf50;">
+                        <div class="record-num" id="stat-wins" style="color: #4caf50;">0</div>
+                        <div class="record-label">Wins</div>
+                    </div>
+                    <div class="record-item" style="border-left: 4px solid #ff9800;">
+                        <div class="record-num" id="stat-draws" style="color: #ff9800;">0</div>
+                        <div class="record-label">Draws</div>
+                    </div>
+                    <div class="record-item" style="border-left: 4px solid #f44336;">
+                        <div class="record-num" id="stat-losses" style="color: #f44336;">0</div>
+                        <div class="record-label">Losses</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Win Rate -->
+            <div class="panel" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: 8px;">
+                <h4 style="margin-top: 0;">Win Rate</h4>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;">
+                    <div style="background: var(--color-bg-primary); border-radius: 4px; overflow: hidden; height: 30px;">
+                        <div id="winRateBar" style="background: #4caf50; height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">0%</div>
+                    </div>
+                    <div id="stat-winrate" style="font-weight: 600; font-size: 1.25rem;">0%</div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module">
+    import { api } from "../js/api.js";
+    import { showMessage } from "../js/ui.js";
+
+    const msg = document.getElementById("msg");
+    const backBtn = document.getElementById("backBtn");
+    const performanceForm = document.getElementById("performanceForm");
+    const traineeSelect = document.getElementById("traineeSelect");
+    const performanceSection = document.getElementById("performanceSection");
+    const performanceSubtitle = document.getElementById("performanceSubtitle");
+    const performanceTraineeName = document.getElementById("performanceTraineeName");
+
+    async function loadTraineeList() {
+        try {
+            const trainees = await api.listTrainees({ size: 1000 });
+            traineeSelect.innerHTML = '<option value="">Select a trainee...</option>' + 
+                trainees.map(t => `<option value="${t.id}">${t.name} (Rank #${t.ranking || '-'})</option>`).join("");
+        } catch (err) {
+            showMessage(msg, `Error loading trainees: ${err.message}`, false);
+        }
+    }
+
+    function calculateWinRate(wins, matches) {
+        if (matches === 0) return 0;
+        return Math.round((wins / matches) * 100);
+    }
+
+    async function loadPerformance(traineeId) {
+        try {
+            const data = await api.getPerformance(traineeId);
+            performanceSection.style.display = "block";
+            performanceTraineeName.textContent = `${data.traineeName} - Performance Metrics`;
+            performanceSubtitle.textContent = `Overall rating progress from 1200 to current level`;
+
+            // Stats
+            document.getElementById("stat-matches").textContent = data.matchesPlayed || 0;
+            document.getElementById("stat-current").textContent = data.currentRating || 1200;
+            document.getElementById("stat-highest").textContent = data.highestRating || 1200;
+            document.getElementById("stat-attendance").textContent = data.attendancePercentage ? `${Number(data.attendancePercentage).toFixed(1)}%` : "-";
+
+            // Record
+            document.getElementById("stat-wins").textContent = data.wins || 0;
+            document.getElementById("stat-draws").textContent = data.draws || 0;
+            document.getElementById("stat-losses").textContent = data.losses || 0;
+
+            // Win Rate
+            const winRate = calculateWinRate(data.wins || 0, data.matchesPlayed || 0);
+            document.getElementById("stat-winrate").textContent = `${winRate}%`;
+            document.getElementById("winRateBar").style.width = `${winRate}%`;
+            document.getElementById("winRateBar").textContent = winRate > 0 ? `${winRate}%` : "";
+
+            showMessage(msg, `Loaded performance data for ${data.traineeName}`);
+        } catch (err) {
+            performanceSection.style.display = "none";
+            showMessage(msg, `Error loading performance: ${err.message}`, false);
+        }
+    }
+
+    performanceForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const traineeId = Number(traineeSelect.value);
+        if (!traineeId) {
+            showMessage(msg, "Please select a trainee", false);
+            return;
+        }
+        await loadPerformance(traineeId);
+    });
+
+    backBtn.addEventListener("click", () => {
+        window.location.href = "/index.html";
+    });
+
+    // Load trainee list on page load
+    loadTraineeList();
+
+    // Check if traineeId is in URL params
+    const params = new URLSearchParams(window.location.search);
+    const urlTraineeId = params.get("traineeId");
+    if (urlTraineeId) {
+        traineeSelect.value = urlTraineeId;
+        loadPerformance(Number(urlTraineeId));
+    }
+</script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

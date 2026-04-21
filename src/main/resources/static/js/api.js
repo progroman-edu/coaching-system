@@ -68,6 +68,7 @@ async function request(path, options = {}) {
 export const api = {
     getDashboard: () => request("/analytics/dashboard"),
     getRatingTrend: (traineeId) => request(`/analytics/rating-trend/${traineeId}`),
+    getPerformance: (traineeId) => request(`/analytics/performance/${traineeId}`),
     getChessComAllModeHistory: (username, limitArchives) =>
         request(`/chesscom/${encodeURIComponent(username)}/match-history/all-modes${limitArchives ? `?limitArchives=${encodeURIComponent(limitArchives)}` : ""}`),
     syncTraineeChessComRating: (traineeId, mode = "rapid") =>
