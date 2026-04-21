@@ -180,6 +180,9 @@ public class TraineeServiceImpl implements TraineeService {
         matchResultRepository.deleteAllInBatch();
         matchParticipantRepository.deleteAllInBatch();
         matchRepository.deleteAllInBatch();
+        rapidRatingRepository.deleteAllInBatch();
+        blitzRatingRepository.deleteAllInBatch();
+        bulletRatingRepository.deleteAllInBatch();
         traineeRepository.deleteAllInBatch();
         resetAutoIncrementIfNoTrainees();
     }
