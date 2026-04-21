@@ -6,6 +6,7 @@ import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.dto.match.MatchCreateRequest;
 import com.chesscoach.main.dto.match.MatchGenerationRequest;
 import com.chesscoach.main.dto.match.MatchResultRequest;
+import com.chesscoach.main.dto.match.MatchResultResponse;
 import com.chesscoach.main.dto.match.MatchSummaryResponse;
 import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
 import com.chesscoach.main.service.MatchService;
@@ -71,11 +72,11 @@ public class MatchController {
 
     @PostMapping("/result")
     @Operation(summary = "Record match result", description = "Record the result of a completed match")
-    public ResponseEntity<ApiResponse<MatchResultRequest>> recordResult(
+    public ResponseEntity<ApiResponse<MatchResultResponse>> recordResult(
         @Valid @RequestBody MatchResultRequest requestBody,
         HttpServletRequest request
     ) {
-        MatchResultRequest data = matchService.recordResult(requestBody);
+        MatchResultResponse data = matchService.recordResult(requestBody);
         return ResponseEntity.ok(ApiResponse.ok("Match result recorded", data, request.getRequestURI()));
     }
 

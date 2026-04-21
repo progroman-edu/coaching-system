@@ -54,7 +54,7 @@ public class ReportServiceImpl implements ReportService {
     @Value("${app.report.export-dir:uploads/reports}")
     private String exportDir;
 
-    @Value("${app.coach.default-email:coach@local}")
+    @Value("${app.coach.default-email}")
     private String defaultCoachEmail;
 
     public ReportServiceImpl(

@@ -12,6 +12,9 @@ public class MatchSummaryResponse {
     private Long matchId;
     private LocalDate scheduledDate;
     private String format;
+    private Integer roundNumber;
+    private Long whitePlayerId;
+    private Long blackPlayerId;
     private String whitePlayer;
     private String blackPlayer;
     private String result;

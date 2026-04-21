@@ -24,7 +24,7 @@
         <div id="msg" class="msg" style="display:none;"></div>
         <div class="panel">
             <h1 class="title">Tournament Scheduling & Results</h1>
-        </section>
+        </div>
 
         <section class="panel">
             <h3>Generate Pairings</h3>
@@ -42,6 +42,14 @@
         </section>
 
         <section class="panel">
+            <h3>Swiss Pairings Bracket</h3>
+            <div class="participant-meta">Double-click a player to instantly record that player as the winner.</div>
+            <div id="swissBracket" class="swiss-bracket empty">
+                <div class="swiss-empty">Generate SWISS pairings to show the bracket.</div>
+            </div>
+        </section>
+
+        <section class="panel">
             <h3>Submit Result</h3>
             <form id="resultForm" class="grid cols-4">
                 <div style="grid-column:1 / -1;">
@@ -49,7 +57,6 @@
                     <select name="matchRef" required>
                         <option value="">Select a loaded F2F match</option>
                     </select>
-                    <!-- Real backend ID is set automatically from selected match reference. -->
                     <input type="hidden" name="matchId" required>
                 </div>
                 <div style="grid-column:1 / -1;">
@@ -73,7 +80,6 @@
     </div>
 </div>
 <script type="module" src="/js/matches.js"></script>
-    <script src="/js/sidebar.js"></script>
+<script src="/js/sidebar.js"></script>
 </body>
 </html>
-

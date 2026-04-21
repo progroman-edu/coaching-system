@@ -60,5 +60,8 @@ public class MatchParticipant extends AuditableEntity {
     @Column(name = "is_bye", nullable = false)
     private Boolean bye = Boolean.FALSE;
 
+    @Column(name = "swiss_round_number", nullable = true)
+    private Integer swissRoundNumber;
+
 }
 

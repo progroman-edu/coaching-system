@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS match_participants (
     start_rating INT,
     points_earned DOUBLE,
     is_bye BOOLEAN NOT NULL,
+    swiss_round_number INT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_match_participants_match FOREIGN KEY (match_id) REFERENCES matches (id),
@@ -111,6 +112,7 @@ CREATE TABLE IF NOT EXISTS match_participants (
 
 CREATE INDEX idx_match_participants_match ON match_participants(match_id);
 CREATE INDEX idx_match_participants_trainee ON match_participants(trainee_id);
+CREATE INDEX idx_match_participants_swiss_round ON match_participants(match_id, swiss_round_number);
 
 CREATE TABLE IF NOT EXISTS match_results (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -133,6 +135,27 @@ CREATE INDEX idx_match_results_match ON match_results(match_id);
 CREATE INDEX idx_match_results_white ON match_results(white_trainee_id);
 CREATE INDEX idx_match_results_black ON match_results(black_trainee_id);
 CREATE INDEX idx_match_results_played_at ON match_results(played_at);
+
+CREATE TABLE IF NOT EXISTS rematch_round (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    trainee_id_1 BIGINT NOT NULL,
+    trainee_id_2 BIGINT NOT NULL,
+    original_match_id BIGINT NOT NULL,
+    rematch_match_id BIGINT,
+    reason VARCHAR(255) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_rematch_trainee_1 FOREIGN KEY (trainee_id_1) REFERENCES trainees(id),
+    CONSTRAINT fk_rematch_trainee_2 FOREIGN KEY (trainee_id_2) REFERENCES trainees(id),
+    CONSTRAINT fk_rematch_original_match FOREIGN KEY (original_match_id) REFERENCES matches(id),
+    CONSTRAINT fk_rematch_rematch_match FOREIGN KEY (rematch_match_id) REFERENCES matches(id),
+    CONSTRAINT uk_rematch_trainee_pair UNIQUE (trainee_id_1, trainee_id_2, original_match_id)
+);
+
+CREATE INDEX idx_rematch_status ON rematch_round(status);
+CREATE INDEX idx_rematch_original_match ON rematch_round(original_match_id);
+CREATE INDEX idx_rematch_rematch_match ON rematch_round(rematch_match_id);
 
 CREATE TABLE IF NOT EXISTS ratings_history (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

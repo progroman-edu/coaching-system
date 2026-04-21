@@ -1,0 +1,105 @@
+<!-- Swiss Tournament Bracket Visualization Page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <script src="/js/page-stability.js"></script>
+    <title>Tournament Bracket</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/bracket.css">
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link active" href="/bracket.html">Bracket</a>
+        <a class="nav-link" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+        
+        <div class="panel">
+            <h1 class="title">Tournament Bracket</h1>
+        </div>
+
+        <section class="panel">
+            <div class="bracket-selector">
+                <label>Select Tournament (Match)</label>
+                <select id="matchSelect" required>
+                    <option value="">Loading tournaments...</option>
+                </select>
+                <button id="loadBracketBtn" class="secondary" type="button">Load Bracket</button>
+                <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div id="bracketContainer" class="bracket-wrapper" style="display:none;">
+                <!-- Bracket visualization will be rendered here -->
+                <div id="bracketScroll" class="bracket-scroll">
+                    <!-- Swiss rounds will be displayed left-to-right -->
+                </div>
+            </div>
+            <div id="noBracketMsg" class="info-box">
+                Select a tournament above to view the bracket.
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3>Match Details</h3>
+            <div id="matchDetailsContainer" style="display:none;">
+                <div class="match-details-grid">
+                    <div>
+                        <label>Tournament Format</label>
+                        <span id="detailFormat">-</span>
+                    </div>
+                    <div>
+                        <label>Total Participants</label>
+                        <span id="detailParticipants">-</span>
+                    </div>
+                    <div>
+                        <label>Current Round</label>
+                        <span id="detailRound">-</span>
+                    </div>
+                    <div>
+                        <label>Total Rounds</label>
+                        <span id="detailTotalRounds">-</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3>Instructions</h3>
+            <div class="info-box">
+                <ul>
+                    <li><strong>Double-click a player</strong> to select them as the winner of the match</li>
+                    <li><strong>Green bars</strong> indicate qualified (advancing) players</li>
+                    <li><strong>Red bars</strong> indicate eliminated players</li>
+                    <li><strong>Orange bars</strong> indicate active/current round matches</li>
+                    <li><strong>Blue bars</strong> indicate pending matches (not yet played)</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Loading...</span>
+    </div>
+</div>
+
+<script type="module" src="/js/bracket.js"></script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

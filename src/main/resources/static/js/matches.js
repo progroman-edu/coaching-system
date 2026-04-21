@@ -16,6 +16,8 @@ const scheduleSelectedCount = document.getElementById("scheduleSelectedCount");
 const pairSelectedCount = document.getElementById("pairSelectedCount");
 const historySelectedLabel = document.getElementById("historySelectedLabel");
 const resultMatchSelect = resultForm?.querySelector('select[name="matchRef"]');
+const resultTypeSelect = resultForm?.querySelector('select[name="resultType"]');
+const swissBracket = document.getElementById("swissBracket");
 const scheduleDateInput = scheduleForm?.querySelector('input[name="scheduledDate"]');
 const historyModeButtons = document.querySelectorAll("#historyModeTabs [data-history-mode]");
 const historyModeInput = historyForm?.querySelector('input[name="historyMode"]');
@@ -23,6 +25,7 @@ const scheduleSelectedIds = new Set();
 const pairSelectedIds = new Set();
 const traineesById = new Map();
 const offlineMatchesByRef = new Map();
+let latestSwissPairings = [];
 
 function parseIds(idsText) {
     return idsText
@@ -54,7 +57,6 @@ function setLoading(active) {
 }
 
 async function withLoading(task) {
-    // Standard wrapper: show loader before async work, always hide after.
     setLoading(true);
     try {
         return await task();
@@ -64,7 +66,6 @@ async function withLoading(task) {
 }
 
 function shortDate(value) {
-    // Convert YYYY-MM-DD from backend into MM/DD/YY for display IDs.
     const text = String(value ?? "");
     const parts = text.split("-");
     if (parts.length !== 3) return text;
@@ -75,7 +76,6 @@ function shortDate(value) {
 }
 
 function winnerSide(resultText) {
-    // Normalize different result formats into a side ("white"/"black"/"draw").
     const value = String(resultText ?? "").trim().toLowerCase();
     if (!value) return "";
     if (value.includes("draw")) return "draw";
@@ -93,7 +93,6 @@ function nameResultClass(side, winner) {
 }
 
 function buildOfflineMatchRefRow(match) {
-    // Build the requested F2F match reference format and apply win/loss highlighting.
     const winner = winnerSide(match?.result);
     const whiteClass = nameResultClass("white", winner);
     const blackClass = nameResultClass("black", winner);
@@ -105,7 +104,6 @@ function buildOfflineMatchRefRow(match) {
 }
 
 function isWithinStartDateToToday(dateText, startDateText) {
-    // Date filter behavior: selected date is start date; end date is today's date.
     const value = String(dateText ?? "").trim();
     if (!value) return false;
     if (!startDateText) return true;
@@ -120,7 +118,6 @@ function isWithinStartDateToToday(dateText, startDateText) {
 }
 
 function applyHistoryFilters(rows, filterDate, filterFormat) {
-    // Apply date range + optional format filter for history only.
     return rows.filter((row) => {
         if (!isWithinStartDateToToday(row.date, filterDate)) {
             return false;
@@ -157,7 +154,6 @@ function initScheduleDateInput() {
 }
 
 function refreshResultMatchOptions() {
-    // Result form uses a human-readable match ref while storing real backend matchId internally.
     if (!resultMatchSelect) return;
     const options = ['<option value="">Select a loaded F2F match</option>'];
     for (const [key, entry] of offlineMatchesByRef.entries()) {
@@ -165,6 +161,128 @@ function refreshResultMatchOptions() {
         options.push(`<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`);
     }
     resultMatchSelect.innerHTML = options.join("");
+}
+
+function findOfflineMatchEntryById(matchId) {
+    for (const [key, entry] of offlineMatchesByRef.entries()) {
+        if (Number(entry?.match?.matchId) === Number(matchId)) {
+            return { key, entry };
+        }
+    }
+    return null;
+}
+
+function updateCachedResult(matchId, resultText) {
+    const result = String(resultText ?? "");
+    const hit = findOfflineMatchEntryById(matchId);
+    if (hit?.entry?.match) {
+        hit.entry.match.result = result;
+    }
+    latestSwissPairings = latestSwissPairings.map((pairing) => (
+        Number(pairing?.matchId) === Number(matchId)
+            ? { ...pairing, result }
+            : pairing
+    ));
+}
+
+function resultDisplayText(resultText) {
+    const value = String(resultText ?? "").trim().toUpperCase();
+    if (!value) return "PENDING";
+    if (value === "WHITE_WIN") return "1-0";
+    if (value === "BLACK_WIN") return "0-1";
+    if (value === "DRAW") return "0.5-0.5";
+    return value;
+}
+
+function resultChipClass(resultText) {
+    const side = winnerSide(resultText);
+    if (side === "white") return "win";
+    if (side === "black") return "loss";
+    if (side === "draw") return "draw";
+    return "";
+}
+
+function renderSwissBracket() {
+    if (!swissBracket) return;
+    if (!latestSwissPairings.length) {
+        swissBracket.classList.add("empty");
+        swissBracket.innerHTML = '<div class="swiss-empty">Generate SWISS pairings to show the bracket.</div>';
+        return;
+    }
+    swissBracket.classList.remove("empty");
+    const roundLabel = latestSwissPairings[0]?.roundNumber ? `Round ${latestSwissPairings[0].roundNumber}` : "Swiss Pairings";
+    const cards = latestSwissPairings.map((match, index) => {
+        const winner = winnerSide(match?.result);
+        const whiteClass = winner === "draw" ? "draw" : (winner === "white" ? "white-win" : (winner === "black" ? "white-loss" : ""));
+        const blackClass = winner === "draw" ? "draw" : (winner === "black" ? "black-win" : (winner === "white" ? "black-loss" : ""));
+        const blackName = String(match?.blackPlayer ?? "").trim();
+        const bye = !blackName || blackName.toUpperCase() === "BYE";
+        return `
+            <article class="swiss-match-card">
+                <div class="swiss-match-head">
+                    <span>Board ${index + 1}</span>
+                    <span class="swiss-result-chip ${resultChipClass(match?.result)}">${escapeHtml(resultDisplayText(match?.result))}</span>
+                </div>
+                <button
+                    type="button"
+                    class="swiss-player ${whiteClass}"
+                    data-match-id="${escapeHtml(match?.matchId ?? "")}"
+                    data-player-side="white"
+                    ${bye ? "disabled" : ""}>${escapeHtml(match?.whitePlayer ?? "-")}</button>
+                <div class="swiss-vs">VS</div>
+                <button
+                    type="button"
+                    class="swiss-player ${bye ? "bye" : blackClass}"
+                    data-match-id="${escapeHtml(match?.matchId ?? "")}"
+                    data-player-side="black"
+                    ${bye ? "disabled" : ""}>${escapeHtml(bye ? "BYE" : blackName)}</button>
+            </article>
+        `;
+    }).join("");
+    swissBracket.innerHTML = `
+        <div class="swiss-round">
+            <div class="swiss-round-title">${escapeHtml(roundLabel)}</div>
+            <div class="swiss-grid">${cards}</div>
+        </div>
+    `;
+}
+
+async function submitBracketWinner(matchId, winner) {
+    if (!Number.isFinite(matchId) || matchId <= 0) return;
+    const found = latestSwissPairings.find((match) => Number(match?.matchId) === Number(matchId));
+    if (!found) {
+        showMessage(msg, "Select a valid loaded match first.", false);
+        return;
+    }
+    if (String(found?.result ?? "").toUpperCase() === "BYE" || String(found?.blackPlayer ?? "").toUpperCase() === "BYE") {
+        showMessage(msg, "This pairing is a bye and does not require a result.", false);
+        return;
+    }
+    if (winnerSide(found?.result)) {
+        showMessage(msg, "Result already recorded for this pairing.", false);
+        return;
+    }
+    const payload = {
+        matchId,
+        whiteScore: winner === "white" ? 1.0 : 0.0,
+        blackScore: winner === "black" ? 1.0 : 0.0
+    };
+    try {
+        await withLoading(() => api.submitMatchResult(payload));
+        updateCachedResult(matchId, winner === "white" ? "WHITE_WIN" : "BLACK_WIN");
+        refreshResultMatchOptions();
+        renderSwissBracket();
+        const selected = findOfflineMatchEntryById(matchId);
+        if (resultMatchSelect && selected) {
+            resultMatchSelect.value = selected.key;
+        }
+        const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
+        if (hiddenIdInput) hiddenIdInput.value = String(matchId);
+        if (resultTypeSelect) resultTypeSelect.value = winner === "white" ? "WHITE_WIN" : "BLACK_WIN";
+        showMessage(msg, "Match result recorded.");
+    } catch (err) {
+        showMessage(msg, err.message, false);
+    }
 }
 
 function syncSelectedIds(form, selectedIds, countEl) {
@@ -175,7 +293,6 @@ function syncSelectedIds(form, selectedIds, countEl) {
 }
 
 function bindParticipantPicker(container, form, selectedIds, countEl) {
-    // Multi-select participant cards for schedule/pairing forms.
     container?.addEventListener("click", (e) => {
         const card = e.target.closest("[data-participant-id]");
         if (!card) return;
@@ -196,7 +313,6 @@ function bindParticipantPicker(container, form, selectedIds, countEl) {
 }
 
 function bindSingleParticipantPicker(container, form, selectedLabelEl) {
-    // Single-select participant card for history lookup.
     container?.addEventListener("click", (e) => {
         const card = e.target.closest("[data-participant-id]");
         if (!card) return;
@@ -221,7 +337,6 @@ function bindSingleParticipantPicker(container, form, selectedLabelEl) {
 }
 
 async function loadParticipantProfiles() {
-    // Load once, then reuse map for history mode checks and rendering.
     if (!scheduleProfiles && !pairProfiles && !historyProfiles) return;
     try {
         const trainees = await withLoading(() => api.listTrainees({ page: 0, size: 500 }));
@@ -250,7 +365,6 @@ async function loadParticipantProfiles() {
 }
 
 function renderMatches(data, filters = {}) {
-    // Offline/F2F history table rendering.
     const filterDate = String(filters.dateFilter ?? "").trim();
     const filterFormat = String(filters.formatFilter ?? "ALL").toUpperCase();
     const normalized = data.map((m) => ({
@@ -313,7 +427,6 @@ function safeHttpUrl(value) {
 }
 
 function renderOnlineMatches(data, username, filters = {}) {
-    // Online/Chess.com history table rendering.
     const groupedGames = data?.groupedGames ?? {};
     const groups = ["rapid", "blitz", "bullet", "daily", "other"];
     const normalizedUsername = String(username ?? "").toLowerCase();
@@ -338,7 +451,6 @@ function renderOnlineMatches(data, username, filters = {}) {
         const detailsUrl = safeHttpUrl(g?.url);
         const detailsLink = detailsUrl ? `<a href="${escapeHtml(detailsUrl)}" target="_blank" rel="noopener">View</a>` : "";
         const ecoText = String(g?.eco ?? "").trim();
-        // Chess.com ECO URL tail is used as opening name when available.
         const opening = ecoText
             ? decodeURIComponent(ecoText.split("/").pop() || "").replaceAll("-", " ")
             : "";
@@ -374,7 +486,6 @@ function renderRatingHistory(rows) {
 }
 
 scheduleForm?.addEventListener("submit", async (e) => {
-    // Create one scheduled match using selected participants.
     e.preventDefault();
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(scheduleForm).entries());
@@ -397,7 +508,6 @@ scheduleForm?.addEventListener("submit", async (e) => {
 });
 
 pairForm?.addEventListener("submit", async (e) => {
-    // Generate pairings (Swiss or Round Robin) from selected participants.
     e.preventDefault();
     clearMessage(msg);
     const payload = Object.fromEntries(new FormData(pairForm).entries());
@@ -416,6 +526,8 @@ pairForm?.addEventListener("submit", async (e) => {
                 : api.generateRoundRobin(payload)
         ));
         renderMatches(data);
+        latestSwissPairings = selectedFormat === "SWISS" ? [...data] : [];
+        renderSwissBracket();
         showMessage(msg, `${selectedFormat} pairings generated.`);
     } catch (err) {
         showMessage(msg, err.message, false);
@@ -423,7 +535,6 @@ pairForm?.addEventListener("submit", async (e) => {
 });
 
 resultForm?.addEventListener("submit", async (e) => {
-    // Submit result using selected match + outcome; backend resolves match participants.
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(resultForm).entries());
     payload.matchId = Number(payload.matchId);
@@ -448,15 +559,17 @@ resultForm?.addEventListener("submit", async (e) => {
     }
     try {
         await withLoading(() => api.submitMatchResult(payload));
+        updateCachedResult(payload.matchId, resultType);
+        refreshResultMatchOptions();
+        renderSwissBracket();
         showMessage(msg, "Match result recorded.");
-        resultForm.reset();
+        if (resultTypeSelect) resultTypeSelect.value = "";
     } catch (err) {
         showMessage(msg, err.message, false);
     }
 });
 
 historyForm?.addEventListener("submit", async (e) => {
-    // History mode switch: OFFLINE uses local matches, ONLINE uses Chess.com API proxy.
     e.preventDefault();
     clearMessage(msg);
     const historyData = new FormData(historyForm);
@@ -499,11 +612,25 @@ historyForm?.addEventListener("submit", async (e) => {
 });
 
 resultMatchSelect?.addEventListener("change", () => {
-    // On match ref selection, hydrate hidden matchId for result submission.
     const key = String(resultMatchSelect.value ?? "");
     const match = offlineMatchesByRef.get(key)?.match;
     const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
     if (hiddenIdInput) hiddenIdInput.value = match?.matchId ? String(match.matchId) : "";
+    if (!resultTypeSelect) return;
+    const side = winnerSide(match?.result);
+    if (side === "white") resultTypeSelect.value = "WHITE_WIN";
+    else if (side === "black") resultTypeSelect.value = "BLACK_WIN";
+    else if (side === "draw") resultTypeSelect.value = "DRAW";
+    else resultTypeSelect.value = "";
+});
+
+swissBracket?.addEventListener("dblclick", (e) => {
+    const playerButton = e.target.closest("[data-match-id][data-player-side]");
+    if (!playerButton) return;
+    const side = String(playerButton.dataset.playerSide ?? "").toLowerCase();
+    if (side !== "white" && side !== "black") return;
+    const matchId = Number(playerButton.dataset.matchId);
+    void submitBracketWinner(matchId, side);
 });
 
 bindParticipantPicker(scheduleProfiles, scheduleForm, scheduleSelectedIds, scheduleSelectedCount);
@@ -511,4 +638,5 @@ bindParticipantPicker(pairProfiles, pairForm, pairSelectedIds, pairSelectedCount
 bindSingleParticipantPicker(historyProfiles, historyForm, historySelectedLabel);
 initHistoryModeTabs();
 initScheduleDateInput();
+renderSwissBracket();
 loadParticipantProfiles();

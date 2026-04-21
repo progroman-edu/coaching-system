@@ -4,6 +4,7 @@ package com.chesscoach.main.service.impl;
 import com.chesscoach.main.dto.match.MatchCreateRequest;
 import com.chesscoach.main.dto.match.MatchGenerationRequest;
 import com.chesscoach.main.dto.match.MatchResultRequest;
+import com.chesscoach.main.dto.match.MatchResultResponse;
 import com.chesscoach.main.dto.match.MatchSummaryResponse;
 import com.chesscoach.main.exception.ConflictException;
 import com.chesscoach.main.exception.ResourceNotFoundException;
@@ -22,8 +23,9 @@ import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.MatchService;
 import com.chesscoach.main.service.RatingService;
+import com.chesscoach.main.service.SwissTournamentService;
 import com.chesscoach.main.util.RoundRobinGenerator;
-import com.chesscoach.main.util.SwissPairingGenerator;
+import com.chesscoach.main.util.SwissPairingGenerator.Pairing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +51,7 @@ public class MatchServiceImpl implements MatchService {
     private final MatchResultRepository matchResultRepository;
     private final TraineeRepository traineeRepository;
     private final RatingService ratingService;
+    private final SwissTournamentService swissTournamentService;
 
     @Value("${app.rating.default:1200}")
     private int defaultRating;
@@ -58,13 +61,15 @@ public class MatchServiceImpl implements MatchService {
         MatchParticipantRepository matchParticipantRepository,
         MatchResultRepository matchResultRepository,
         TraineeRepository traineeRepository,
-        RatingService ratingService
+        RatingService ratingService,
+        SwissTournamentService swissTournamentService
     ) {
         this.matchRepository = matchRepository;
         this.matchParticipantRepository = matchParticipantRepository;
         this.matchResultRepository = matchResultRepository;
         this.traineeRepository = traineeRepository;
         this.ratingService = ratingService;
+        this.swissTournamentService = swissTournamentService;
     }
 
     private int getRapidCurrentRating(Trainee trainee) {
@@ -96,25 +101,46 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public List<MatchSummaryResponse> generateSwiss(MatchGenerationRequest request) {
-        log.info("Generating Swiss pairings for {} trainees, round {}", 
-            request.getTraineeIds().size(), request.getRoundNumber());
+        log.info("Generating Swiss pairings for round {}", request.getRoundNumber());
         
-        List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
-        List<Long> sortedIds = trainees.stream()
-            .sorted(Comparator.comparing(this::getRapidCurrentRating).reversed())
-            .map(Trainee::getId)
-            .toList();
+        // Get pairings from new Swiss tournament service
+        List<Pairing> pairings = swissTournamentService.generateNextRound(request.getRoundNumber());
+        
+        // Map trainee IDs for lookup
+        List<Long> allTraineeIds = new ArrayList<>();
+        for (Pairing pairing : pairings) {
+            allTraineeIds.add(pairing.whiteTraineeId());
+            if (pairing.blackTraineeId() != null) {
+                allTraineeIds.add(pairing.blackTraineeId());
+            }
+        }
+        List<Trainee> allTrainees = traineeRepository.findAllById(allTraineeIds);
+        Map<Long, Trainee> traineeMap = allTrainees.stream()
+            .collect(Collectors.toMap(Trainee::getId, Function.identity()));
 
-        Map<Long, Trainee> traineeMap = traineesByIds(trainees);
+        // Create matches for each pairing and store swiss_round_number
         List<MatchSummaryResponse> summaries = new ArrayList<>();
-        for (SwissPairingGenerator.Pairing pairing : SwissPairingGenerator.generate(sortedIds)) {
-            Match match = createMatchRecord(MatchFormat.SWISS, request.getRoundNumber(), LocalDate.now(), 
-                pairing.whiteTraineeId(), pairing.blackTraineeId());
+        for (Pairing pairing : pairings) {
+            Match match = createMatchRecord(
+                MatchFormat.SWISS,
+                request.getRoundNumber(),
+                LocalDate.now(),
+                pairing.whiteTraineeId(),
+                pairing.blackTraineeId()
+            );
+
+            // Store swiss_round_number in participants
+            List<MatchParticipant> participants = matchParticipantRepository.findByMatchId(match.getId());
+            for (MatchParticipant participant : participants) {
+                participant.setSwissRoundNumber(request.getRoundNumber());
+                matchParticipantRepository.save(participant);
+            }
+
             String result = pairing.blackTraineeId() == null ? "BYE" : null;
             summaries.add(toSummary(match, traineeMap, result));
         }
         
-        log.debug("Generated {} Swiss pairings", summaries.size());
+        log.debug("Generated {} Swiss pairings for round {}", summaries.size(), request.getRoundNumber());
         return summaries;
     }
 
@@ -147,7 +173,7 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     @Transactional
-    public MatchResultRequest recordResult(MatchResultRequest request) {
+    public MatchResultResponse recordResult(MatchResultRequest request) {
         log.info("Recording match result for match: {}", request.getMatchId());
         
         Match match = matchRepository.findById(request.getMatchId())
@@ -212,7 +238,17 @@ public class MatchServiceImpl implements MatchService {
         log.info("Match result recorded: {} vs {}, result={}", 
             white.getName(), black.getName(), result.getResultType());
         
-        return request;
+        // Build response with match details and rating changes
+        MatchResultResponse response = MatchResultResponse.builder()
+            .matchId(match.getId())
+            .resultType(result.getResultType().name())
+            .whiteScore(result.getWhiteScore())
+            .blackScore(result.getBlackScore())
+            .recordedAt(savedResult.getPlayedAt().toLocalDateTime())
+            .message("Match result recorded successfully")
+            .build();
+        
+        return response;
     }
 
     @Override
@@ -295,11 +331,13 @@ public class MatchServiceImpl implements MatchService {
         response.setMatchId(match.getId());
         response.setScheduledDate(match.getScheduledDate());
         response.setFormat(match.getFormat().name());
+        response.setRoundNumber(match.getRoundNumber());
         if (!participants.isEmpty()) {
             MatchParticipant white = participants.stream()
                 .filter(p -> p.getPieceColor() == PieceColor.WHITE)
                 .findFirst()
                 .orElse(participants.get(0));
+            response.setWhitePlayerId(white.getTrainee().getId());
             response.setWhitePlayer(traineeMap.get(white.getTrainee().getId()).getName());
             if (participants.size() > 1) {
                 MatchParticipant black = participants.stream()
@@ -309,10 +347,12 @@ public class MatchServiceImpl implements MatchService {
                         .filter(p -> !p.getTrainee().getId().equals(white.getTrainee().getId()))
                         .findFirst()
                         .orElse(null));
+                response.setBlackPlayerId(black != null ? black.getTrainee().getId() : null);
                 response.setBlackPlayer(black != null
                     ? traineeMap.get(black.getTrainee().getId()).getName()
                     : "BYE");
             } else {
+                response.setBlackPlayerId(null);
                 response.setBlackPlayer("BYE");
             }
         }
@@ -340,4 +380,3 @@ public class MatchServiceImpl implements MatchService {
     }
 
 }
-

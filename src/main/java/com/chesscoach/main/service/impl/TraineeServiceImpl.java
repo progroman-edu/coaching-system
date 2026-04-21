@@ -61,13 +61,13 @@ public class TraineeServiceImpl implements TraineeService {
     @Value("${app.rating.default:1200}")
     private int defaultRating;
 
-    @Value("${app.coach.default-email:coach@local}")
+    @Value("${app.coach.default-email}")
     private String defaultCoachEmail;
 
-    @Value("${app.coach.default-name:Default Coach}")
+    @Value("${app.coach.default-name}")
     private String defaultCoachName;
 
-    @Value("${app.coach.default-phone:N/A}")
+    @Value("${app.coach.default-phone}")
     private String defaultCoachPhone;
 
     public TraineeServiceImpl(

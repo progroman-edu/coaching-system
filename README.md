@@ -78,12 +78,29 @@ Note: Chess.com sync currently supports only `rapid`, `blitz`, and `bullet`.
 CREATE DATABASE chess_coach_db;
 ```
 
-2. Set environment variables (PowerShell):
+2. Set up environment variables:
 
+**Option A: Using `.env` file (recommended)**
+```bash
+# Copy template
+cp .env.example .env
+
+# Edit .env with your database credentials and personal info:
+# APP_DB_PASSWORD=your_password
+# APP_COACH_DEFAULT_EMAIL=your-email@example.com
+# APP_COACH_DEFAULT_NAME=Your Name
+# etc.
+```
+
+**Option B: Set manually via PowerShell**
 ```powershell
 $env:APP_DB_URL="jdbc:mysql://localhost:3306/chess_coach_db?serverTimezone=UTC"
 $env:APP_DB_USERNAME="root"
-$env:APP_DB_PASSWORD="pass123"
+$env:APP_DB_PASSWORD="your_password"
+$env:APP_COACH_DEFAULT_EMAIL="your-email@example.com"
+$env:APP_COACH_DEFAULT_NAME="Your Name"
+$env:APP_COACH_DEFAULT_PHONE="+1-XXX-XXX-XXXX"
+$env:APP_CHESSCOM_USER_AGENT="ChessCoachMain/1.0 (contact: your-email@example.com)"
 ```
 
 3. Start app:

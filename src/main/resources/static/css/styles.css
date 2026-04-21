@@ -499,6 +499,138 @@ th {
     font-weight: 700;
 }
 
+.swiss-bracket {
+    margin-top: 10px;
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #081226 0%, #0f1f3a 55%, #101f2f 100%);
+    padding: 14px;
+    overflow-x: auto;
+}
+
+.swiss-bracket.empty {
+    border-color: var(--border);
+    background: #f8fafc;
+}
+
+.swiss-empty {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.swiss-round {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 100%;
+}
+
+.swiss-round-title {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.swiss-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.swiss-match-card {
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(9, 18, 36, 0.8);
+}
+
+.swiss-match-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.swiss-result-chip {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+.swiss-result-chip.win {
+    background: #14532d;
+    color: #dcfce7;
+}
+
+.swiss-result-chip.loss {
+    background: #7f1d1d;
+    color: #fee2e2;
+}
+
+.swiss-result-chip.draw {
+    background: #854d0e;
+    color: #fef3c7;
+}
+
+.swiss-player {
+    display: block;
+    width: 100%;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: #0b1a32;
+    color: #dbeafe;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.swiss-player:last-child {
+    margin-bottom: 0;
+}
+
+.swiss-player.white-win,
+.swiss-player.black-win {
+    background: #14532d;
+    border-color: #22c55e;
+    color: #dcfce7;
+}
+
+.swiss-player.white-loss,
+.swiss-player.black-loss {
+    background: #7f1d1d;
+    border-color: #ef4444;
+    color: #fee2e2;
+}
+
+.swiss-player.draw {
+    background: #854d0e;
+    border-color: #f59e0b;
+    color: #fef3c7;
+}
+
+.swiss-player.bye {
+    background: #1e293b;
+    border-style: dashed;
+    color: #94a3b8;
+    cursor: default;
+}
+
+.swiss-vs {
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 4px 0;
+}
+
 .loading-overlay {
     position: fixed;
     inset: 0;

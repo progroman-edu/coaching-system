@@ -49,7 +49,7 @@ public class ChessComServiceImpl implements ChessComService {
     @Value("${app.chesscom.base-url:https://api.chess.com/pub}")
     private String baseUrl;
 
-    @Value("${app.chesscom.user-agent:ChessCoachMain/1.0 (contact: coach@example.com)}")
+    @Value("${app.chesscom.user-agent}")
     private String userAgent;
 
     @Value("${app.chesscom.timeout-seconds:15}")

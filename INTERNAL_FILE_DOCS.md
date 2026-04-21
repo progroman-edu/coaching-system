@@ -123,6 +123,7 @@ Note: `target/` files are build outputs and are intentionally excluded.
 - `src/main/java/com/chesscoach/main/util/EloRatingCalculator.java`: Simplified ELO formula helper.
 - `src/main/java/com/chesscoach/main/util/RoundRobinGenerator.java`: Round-robin pairing generator helper.
 - `src/main/java/com/chesscoach/main/util/SwissPairingGenerator.java`: Swiss-style pairing helper.
+- `src/main/java/com/chesscoach/main/util/SwissPairingEngine.java`: Score-group Swiss pairing engine with repeat-avoidance and bye policy.
 
 ## Resources
 
@@ -150,3 +151,5 @@ Note: `target/` files are build outputs and are intentionally excluded.
 - `src/test/resources/application-test.properties`: Test profile configuration.
 - `src/test/java/com/chesscoach/main/MainApplicationTests.java`: Context load test.
 - `src/test/java/com/chesscoach/main/ServiceSmokeTest.java`: Basic service integration smoke test.
+- `src/test/java/com/chesscoach/main/util/SwissPairingEngineTest.java`: Unit tests for Swiss pairing rules and bye assignment.
+- `src/test/java/com/chesscoach/main/service/impl/SwissTournamentServiceImplTest.java`: Unit test for rematch auto-scheduling flow.

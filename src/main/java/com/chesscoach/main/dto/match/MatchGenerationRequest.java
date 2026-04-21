@@ -2,7 +2,6 @@
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +12,11 @@ import java.util.List;
 @Getter
 public class MatchGenerationRequest {
 
-    @NotEmpty
+    /**
+     * List of trainee IDs to include in pairings.
+     * - For Round Robin: specifies which trainees to pair
+     * - For Swiss: ignored (all trainees are automatically included)
+     */
     private List<Long> traineeIds;
 
     @NotNull

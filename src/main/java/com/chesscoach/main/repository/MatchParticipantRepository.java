@@ -11,5 +11,9 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
     List<MatchParticipant> findByMatchIdOrderByBoardNumberAsc(Long matchId);
 
     List<MatchParticipant> findByTraineeIdOrderByCreatedAtDesc(Long traineeId);
+
+    List<MatchParticipant> findByMatchId(Long matchId);
+
+    boolean existsByTraineeIdAndSwissRoundNumberIsNotNullAndByeTrue(Long traineeId);
 }
 
