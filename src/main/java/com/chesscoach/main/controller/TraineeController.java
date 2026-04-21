@@ -132,5 +132,21 @@ public class TraineeController {
         traineeService.resetTraineeTestData();
         return ResponseEntity.ok(ApiResponse.ok("Trainee test data reset complete", null, request.getRequestURI()));
     }
+
+    @DeleteMapping("/reset-matches")
+    @Operation(summary = "Reset matches only", description = "Clear all match records while preserving trainees (development only)")
+    public ResponseEntity<ApiResponse<Void>> resetMatches(
+        @RequestParam(defaultValue = "false") boolean confirm,
+        HttpServletRequest request
+    ) {
+        if (!allowResetTestData) {
+            throw new IllegalStateException("reset-matches endpoint is disabled");
+        }
+        if (!confirm) {
+            throw new IllegalArgumentException("Set confirm=true to reset match data");
+        }
+        traineeService.resetMatchesOnly();
+        return ResponseEntity.ok(ApiResponse.ok("Match data reset complete (trainees preserved)", null, request.getRequestURI()));
+    }
 }
 

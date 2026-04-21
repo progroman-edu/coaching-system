@@ -28,5 +28,7 @@ public interface TraineeService {
     void delete(Long id);
 
     void resetTraineeTestData();
+
+    void resetMatchesOnly();
 }
 

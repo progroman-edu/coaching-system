@@ -187,6 +187,16 @@ public class TraineeServiceImpl implements TraineeService {
         resetAutoIncrementIfNoTrainees();
     }
 
+    @Override
+    @Transactional
+    public void resetMatchesOnly() {
+        ratingsHistoryRepository.deleteAllInBatch();
+        matchResultRepository.deleteAllInBatch();
+        matchParticipantRepository.deleteAllInBatch();
+        matchRepository.deleteAllInBatch();
+        log.info("Match records reset complete (trainees preserved)");
+    }
+
     private Trainee getTraineeOrThrow(Long id) {
         return traineeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Trainee not found: " + id));
