@@ -223,7 +223,7 @@
     async function loadTraineeDetail() {
         const traineeId = getTraineeIdFromUrl();
         if (!traineeId) {
-            showMessage(msg, "Invalid trainee ID", false);
+            showMessage(msg, "Invalid trainee selection", false);
             backBtn.click();
             return;
         }

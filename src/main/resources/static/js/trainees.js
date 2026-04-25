@@ -7,6 +7,8 @@ const tbody = document.getElementById("traineeRows");
 const form = document.getElementById("traineeForm");
 const filterForm = document.getElementById("filterForm");
 const photoForm = document.getElementById("photoForm");
+const photoProfiles = document.getElementById("photoProfiles");
+const photoSelectedLabel = document.getElementById("photoSelectedLabel");
 const formTitle = document.getElementById("traineeFormTitle");
 const saveBtn = document.getElementById("saveTraineeBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -100,6 +102,35 @@ function initials(name) {
         .join("") || "NA";
 }
 
+function renderPhotoPicker(trainees) {
+    if (!photoProfiles) {
+        return;
+    }
+    const rows = trainees.map((trainee) => `
+        <button type="button" class="participant-card" data-participant-id="${Number(trainee.id)}" aria-pressed="false">
+            <span class="participant-avatar">
+                ${trainee.photoPath ? `<img src="${escapeHtml(trainee.photoPath)}" alt="${escapeHtml(trainee.name)} photo">` : escapeHtml(initials(trainee.name))}
+            </span>
+            <span>
+                <span class="participant-name">${escapeHtml(trainee.name)}</span>
+            </span>
+        </button>
+    `).join("");
+    photoProfiles.innerHTML = rows || "<div>No trainees found.</div>";
+    if (photoSelectedLabel) {
+        photoSelectedLabel.textContent = "Selected: none";
+    }
+}
+
+async function loadPhotoPickerProfiles() {
+    try {
+        const trainees = await api.listTrainees({ page: 0, size: 500, rankingOrder: "asc" });
+        renderPhotoPicker(trainees);
+    } catch (err) {
+        showMessage(msg, err.message, false);
+    }
+}
+
 function updateModeAwareLabels() {
     const label = modeLabel(getSelectedMode());
     if (modePeakHeader) modePeakHeader.textContent = `Mode Peak (${label})`;
@@ -132,7 +163,7 @@ function startEdit(trainee) {
     form.elements.gradeLevel.value = trainee.gradeLevel ?? "";
     form.elements.department.value = trainee.department ?? "";
     form.elements.chessUsername.value = trainee.chessUsername ?? "";
-    if (formTitle) formTitle.textContent = `Edit Trainee #${editingId}`;
+    if (formTitle) formTitle.textContent = "Edit Trainee";
     if (saveBtn) saveBtn.textContent = "Update Trainee";
     if (cancelEditBtn) cancelEditBtn.style.display = "";
     form.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -251,6 +282,34 @@ async function loadTrainees() {
     }
 }
 
+photoProfiles?.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-participant-id]");
+    if (!card) {
+        return;
+    }
+    const id = Number(card.dataset.participantId);
+    if (!Number.isFinite(id)) {
+        return;
+    }
+
+    const cards = photoProfiles.querySelectorAll("[data-participant-id]");
+    cards.forEach((item) => {
+        item.classList.remove("selected");
+        item.setAttribute("aria-pressed", "false");
+    });
+    card.classList.add("selected");
+    card.setAttribute("aria-pressed", "true");
+
+    const hidden = photoForm?.querySelector('input[name="traineeId"]');
+    if (hidden) {
+        hidden.value = String(id);
+    }
+    const name = card.querySelector(".participant-name")?.textContent?.trim() || `ID ${id}`;
+    if (photoSelectedLabel) {
+        photoSelectedLabel.textContent = `Selected: ${name}`;
+    }
+});
+
 form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearMessage(msg);
@@ -348,7 +407,7 @@ syncRatingsBtn?.addEventListener("click", async () => {
             await api.syncTraineeChessComRating(trainee.id, mode);
             successCount += 1;
         } catch (err) {
-            failures.push(`${trainee.name ?? "Trainee"} (#${trainee.id}): ${err.message}`);
+            failures.push(`${trainee.name ?? "Trainee"}: ${err.message}`);
         }
     }
     await loadTrainees();
@@ -406,14 +465,23 @@ photoForm?.addEventListener("submit", async (e) => {
     const traineeId = data.get("traineeId");
     const file = data.get("file");
     if (!traineeId || !file || file.size === 0) {
-        showMessage(msg, "Trainee ID and image file are required.", false);
+        showMessage(msg, "Select a trainee profile and image file.", false);
         return;
     }
     try {
         await api.uploadTraineePhoto(traineeId, file);
         showMessage(msg, "Photo uploaded.");
         photoForm.reset();
+        if (photoSelectedLabel) {
+            photoSelectedLabel.textContent = "Selected: none";
+        }
+        const cards = photoProfiles?.querySelectorAll("[data-participant-id]") || [];
+        cards.forEach((item) => {
+            item.classList.remove("selected");
+            item.setAttribute("aria-pressed", "false");
+        });
         await loadTrainees();
+        await loadPhotoPickerProfiles();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
@@ -422,3 +490,4 @@ photoForm?.addEventListener("submit", async (e) => {
 updateModeAwareLabels();
 updateSortButtonState();
 loadTrainees();
+loadPhotoPickerProfiles();

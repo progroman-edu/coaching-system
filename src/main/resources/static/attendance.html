@@ -29,7 +29,12 @@
         <section class="panel">
             <h3>Record Attendance</h3>
             <form id="attendanceForm" class="grid cols-2">
-                <div><label>Trainee ID</label><input type="number" name="traineeId" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Trainee</label>
+                    <div id="attendanceProfiles" class="participant-picker"></div>
+                    <div id="attendanceSelectedLabel" class="participant-meta">Selected: none</div>
+                    <input type="hidden" name="traineeId" required>
+                </div>
                 <div><label>Date</label><input type="date" name="attendanceDate" required></div>
                 <div>
                     <label>Present?</label>
@@ -48,7 +53,13 @@
             <form id="reportForm" class="grid cols-4">
                 <div><label>Start Date</label><input type="date" name="startDate" required></div>
                 <div><label>End Date</label><input type="date" name="endDate" required></div>
-                <div><label>Trainee ID (optional)</label><input type="number" name="traineeId"></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Trainee (optional)</label>
+                    <div id="reportProfiles" class="participant-picker"></div>
+                    <div id="reportSelectedLabel" class="participant-meta">Selected: all trainees</div>
+                    <input type="hidden" name="traineeId">
+                </div>
+                <div style="display:flex; align-items:flex-end;"><button id="clearReportTrainee" class="secondary" type="button">All Trainees</button></div>
                 <div><label>&nbsp;</label><button class="secondary" type="submit">Generate</button></div>
             </form>
         </section>
@@ -57,7 +68,6 @@
             <table>
                 <thead>
                 <tr>
-                    <th>Trainee ID</th>
                     <th>Name</th>
                     <th>Present Sessions</th>
                     <th>Total Sessions</th>

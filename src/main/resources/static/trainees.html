@@ -138,7 +138,12 @@
         <section class="panel">
             <h3>Upload Trainee Photo</h3>
             <form id="photoForm" class="grid cols-2">
-                <div><label>Trainee ID</label><input type="number" name="traineeId" required></div>
+                <div style="grid-column:1 / -1;">
+                    <label>Select Trainee</label>
+                    <div id="photoProfiles" class="participant-picker"></div>
+                    <div id="photoSelectedLabel" class="participant-meta">Selected: none</div>
+                    <input type="hidden" name="traineeId" required>
+                </div>
                 <div><label>Image File</label><input type="file" name="file" accept="image/*" required></div>
                 <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Upload</button></div>
             </form>

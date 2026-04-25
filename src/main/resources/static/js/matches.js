@@ -349,7 +349,6 @@ async function loadParticipantProfiles() {
                 </span>
                 <span>
                     <span class="participant-name">${escapeHtml(t.name)}</span>
-                    <span class="participant-id">ID: ${t.id}</span>
                 </span>
             </button>
         `).join("");
@@ -473,9 +472,6 @@ function renderOnlineMatches(data, username, filters = {}) {
 function renderRatingHistory(rows) {
     const html = (rows ?? []).map((entry) => `
         <tr>
-            <td>${escapeHtml(entry?.id ?? "")}</td>
-            <td>${escapeHtml(entry?.traineeId ?? "")}</td>
-            <td>${escapeHtml(entry?.matchHistoryId ?? "")}</td>
             <td>${escapeHtml(entry?.oldRating ?? "")}</td>
             <td>${escapeHtml(entry?.newRating ?? "")}</td>
             <td>${escapeHtml(formatDateTime(entry?.createdAt))}</td>

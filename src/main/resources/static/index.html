@@ -52,12 +52,22 @@
                     Performance Analytics
                 </a>
                 <div class="panel">
-                    <h3 style="margin-top: 0;">Rating Improvement Preview</h3>
+                    <h3 style="margin-top: 0;">Rating Change Graph</h3>
                     <form id="trendForm" class="row">
-                        <input type="number" id="trendTraineeId" placeholder="Trainee ID for trend" required>
-                        <button class="secondary" type="submit">Load Trend</button>
+                        <select id="trendTraineeId" required>
+                            <option value="">Select trainee</option>
+                        </select>
+                        <select id="trendMode" required>
+                            <option value="rapid" selected>Rapid</option>
+                            <option value="blitz">Blitz</option>
+                            <option value="bullet">Bullet</option>
+                        </select>
+                        <button id="trendCustomDateBtn" class="secondary" type="button">Custom Date</button>
+                        <input type="date" id="trendWeekStartDate" aria-label="Custom week start date" style="display:none;">
+                        <button class="secondary" type="submit">Load Graph</button>
                     </form>
-                    <pre id="trendOutput">[]</pre>
+                    <p id="trendMeta" class="subtitle" style="margin: 8px 0 0;">Graph defaults to last 7 days from today. Use Custom Date to choose a different 1-week window.</p>
+                    <div id="trendChart" class="trend-chart" role="img" aria-label="Trainee rating trend chart"></div>
                 </div>
             </div>
         </section>

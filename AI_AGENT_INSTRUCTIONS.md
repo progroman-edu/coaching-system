@@ -23,6 +23,7 @@ Before writing any code:
 - Identify **frameworks, patterns, and conventions**
 - Review **database schema and data flow**
 - Reuse existing utilities and abstractions when possible
+- Ask for clarification before proceeding 
 
 ---
 

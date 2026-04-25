@@ -1,14 +1,47 @@
 /* This file defines shared frontend styles and responsive layout rules. */
 :root {
     --bg: #f4f6f8;
+    --bg-gradient-start: #d7f5ef;
     --surface: #ffffff;
+    --surface-soft: #f8fafc;
     --ink: #1f2933;
     --muted: #64748b;
     --accent: #0f766e;
     --accent-2: #0ea5e9;
     --danger: #dc2626;
     --border: #dbe2ea;
+    --sidebar-bg: #0f172a;
+    --sidebar-ink: #e2e8f0;
+    --nav-link: #cbd5e1;
+    --nav-link-hover-bg: #1e293b;
+    --nav-link-hover-ink: #ffffff;
+    --table-head-bg: #f8fafc;
+    --table-row-alt: #fbfdff;
+    --table-row-hover: #eef6ff;
+    --shadow-strong: rgba(15, 23, 42, 0.25);
     --sidebar-width: 260px;
+}
+
+[data-theme="dark"] {
+    --bg: #0b1220;
+    --bg-gradient-start: #172438;
+    --surface: #111a2b;
+    --surface-soft: #0f172a;
+    --ink: #dbe7f6;
+    --muted: #9db0c8;
+    --accent: #14b8a6;
+    --accent-2: #38bdf8;
+    --danger: #ef4444;
+    --border: #223249;
+    --sidebar-bg: #060d1a;
+    --sidebar-ink: #d9e6f7;
+    --nav-link: #b5c6dd;
+    --nav-link-hover-bg: #122036;
+    --nav-link-hover-ink: #ffffff;
+    --table-head-bg: #0d1728;
+    --table-row-alt: #101c31;
+    --table-row-hover: #162845;
+    --shadow-strong: rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -18,7 +51,7 @@
 body {
     margin: 0;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background: radial-gradient(circle at top right, #d7f5ef, var(--bg) 35%);
+    background: radial-gradient(circle at top right, var(--bg-gradient-start), var(--bg) 35%);
     color: var(--ink);
 }
 
@@ -28,8 +61,8 @@ body {
 }
 
 .sidebar {
-    background: #0f172a;
-    color: #e2e8f0;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-ink);
     padding: 24px 16px;
     position: fixed;
     top: 0;
@@ -40,7 +73,7 @@ body {
     transform: translateX(-100%);
     transition: transform 0.2s ease;
     z-index: 20;
-    box-shadow: 10px 0 24px rgba(15, 23, 42, 0.25);
+    box-shadow: 10px 0 24px var(--shadow-strong);
 }
 
 .layout.sidebar-open .sidebar {
@@ -59,7 +92,7 @@ html.sidebar-open-persist .layout .sidebar {
 
 .nav-link {
     display: block;
-    color: #cbd5e1;
+    color: var(--nav-link);
     text-decoration: none;
     padding: 10px 12px;
     border-radius: 10px;
@@ -71,8 +104,8 @@ html.sidebar-open-persist .layout .sidebar {
 
 .nav-link:hover,
 .nav-link.active {
-    background: #1e293b;
-    color: #fff;
+    background: var(--nav-link-hover-bg);
+    color: var(--nav-link-hover-ink);
 }
 
 .content {
@@ -177,6 +210,13 @@ textarea {
     font: inherit;
 }
 
+input,
+select,
+textarea {
+    background: var(--surface-soft);
+    color: var(--ink);
+}
+
 button {
     background: var(--accent);
     color: white;
@@ -197,6 +237,71 @@ button.danger {
     display: flex;
     gap: 8px;
     align-items: center;
+}
+
+.trend-chart {
+    margin-top: 10px;
+    min-height: 280px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    padding: 8px;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: auto;
+    min-width: 70px;
+    padding: 8px 12px;
+    z-index: 30;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+.trend-svg {
+    width: 100%;
+    height: 260px;
+    display: block;
+}
+
+.trend-axis {
+    stroke: #94a3b8;
+    stroke-width: 1;
+}
+
+.trend-grid {
+    stroke: #e2e8f0;
+    stroke-width: 1;
+}
+
+.trend-axis-label {
+    fill: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.trend-line {
+    fill: none;
+    stroke: #0f766e;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.trend-point {
+    fill: #0ea5e9;
+    stroke: #ffffff;
+    stroke-width: 1.5;
+}
+
+.trend-empty {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
 }
 
 .kpi {
@@ -230,16 +335,16 @@ th {
 .trainee-table thead th {
     position: sticky;
     top: 0;
-    background: #f8fafc;
+    background: var(--table-head-bg);
     z-index: 1;
 }
 
 .trainee-table tbody tr:nth-child(even) {
-    background: #fbfdff;
+    background: var(--table-row-alt);
 }
 
 .trainee-table tbody tr:hover {
-    background: #eef6ff;
+    background: var(--table-row-hover);
 }
 
 .sort-btn {
@@ -649,12 +754,56 @@ th {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #ffffff;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 12px 16px;
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
     font-weight: 600;
+}
+
+[data-theme="dark"] .sort-btn {
+    color: #9fb3cb;
+}
+
+[data-theme="dark"] .sort-btn:hover {
+    color: #e2ecf9;
+}
+
+[data-theme="dark"] .rank-badge {
+    background: #21314c;
+    color: #dce7f8;
+}
+
+[data-theme="dark"] .filter-chip,
+[data-theme="dark"] .mode-chip,
+[data-theme="dark"] .trainee-avatar,
+[data-theme="dark"] .trainee-avatar-fallback {
+    background: #1a2a43;
+    color: #dbe7f6;
+    border-color: #304461;
+}
+
+[data-theme="dark"] .msg.ok {
+    background: #113a2a;
+    color: #b9f4d5;
+}
+
+[data-theme="dark"] .msg.err {
+    background: #3c1616;
+    color: #ffd4d4;
+}
+
+[data-theme="dark"] .trend-axis {
+    stroke: #496385;
+}
+
+[data-theme="dark"] .trend-grid {
+    stroke: #23344d;
+}
+
+[data-theme="dark"] .trend-axis-label {
+    fill: #9fb3cb;
 }
 
 .spinner {

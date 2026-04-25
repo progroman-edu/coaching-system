@@ -164,7 +164,7 @@
         try {
             const trainees = await api.listTrainees({ size: 1000 });
             traineeSelect.innerHTML = '<option value="">Select a trainee...</option>' + 
-                trainees.map(t => `<option value="${t.id}">${t.name} (Rank #${t.ranking || '-'})</option>`).join("");
+                trainees.map(t => `<option value="${t.id}">${t.name} (Rank ${t.ranking || '-'})</option>`).join("");
         } catch (err) {
             showMessage(msg, `Error loading trainees: ${err.message}`, false);
         }
