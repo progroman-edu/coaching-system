@@ -7,6 +7,7 @@
     <script src="/js/page-stability.js"></script>
     <title>Trainee Performance</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/icons/favicon.ico">
     <style>
         .stat-grid {
             display: grid;
@@ -15,7 +16,8 @@
             margin-bottom: 2rem;
         }
         .stat-card {
-            background: var(--color-bg-secondary);
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
             padding: 1.5rem;
             border-radius: 8px;
             text-align: center;
@@ -23,12 +25,12 @@
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--color-primary);
+            color: var(--accent);
             margin-bottom: 0.5rem;
         }
         .stat-label {
             font-size: 0.875rem;
-            color: var(--color-text-secondary);
+            color: var(--muted);
         }
         .record-bar {
             display: grid;
@@ -41,7 +43,8 @@
             flex-direction: column;
             align-items: center;
             padding: 0.75rem;
-            background: var(--color-bg-primary);
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 4px;
             flex: 1;
         }
@@ -52,7 +55,7 @@
         .record-label {
             font-size: 0.75rem;
             text-transform: uppercase;
-            color: var(--color-text-secondary);
+            color: var(--muted);
         }
     </style>
 </head>
@@ -63,6 +66,8 @@
         <div class="brand"> </div>
         <a class="nav-link" href="/index.html">Dashboard</a>
         <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/register.html">Register</a>
+        <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
         <a class="nav-link" href="/matches.html">Tournament</a>
         <a class="nav-link" href="/match-history.html">Match History</a>
         <a class="nav-link" href="/attendance.html">Attendance</a>
@@ -116,7 +121,7 @@
             </div>
 
             <!-- Win/Loss/Draw Record -->
-            <div class="panel" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <div class="panel" style="background: var(--surface-soft); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
                 <h4 style="margin-top: 0; margin-bottom: 1rem;">Match Record</h4>
                 <div class="record-bar">
                     <div class="record-item" style="border-left: 4px solid #4caf50;">
@@ -135,10 +140,10 @@
             </div>
 
             <!-- Win Rate -->
-            <div class="panel" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: 8px;">
+            <div class="panel" style="background: var(--surface-soft); padding: 1.5rem; border-radius: 8px;">
                 <h4 style="margin-top: 0;">Win Rate</h4>
                 <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;">
-                    <div style="background: var(--color-bg-primary); border-radius: 4px; overflow: hidden; height: 30px;">
+                    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; height: 30px;">
                         <div id="winRateBar" style="background: #4caf50; height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem;">0%</div>
                     </div>
                     <div id="stat-winrate" style="font-weight: 600; font-size: 1.25rem;">0%</div>
@@ -186,7 +191,7 @@
             document.getElementById("stat-matches").textContent = data.matchesPlayed || 0;
             document.getElementById("stat-current").textContent = data.currentRating || 1200;
             document.getElementById("stat-highest").textContent = data.highestRating || 1200;
-            document.getElementById("stat-attendance").textContent = data.attendancePercentage ? `${Number(data.attendancePercentage).toFixed(1)}%` : "-";
+            document.getElementById("stat-attendance").textContent = data.attendancePercentage == null ? "-" : `${Number(data.attendancePercentage).toFixed(1)}%`;
 
             // Record
             document.getElementById("stat-wins").textContent = data.wins || 0;
@@ -220,16 +225,22 @@
         window.location.href = "/index.html";
     });
 
-    // Load trainee list on page load
-    loadTraineeList();
-
-    // Check if traineeId is in URL params
-    const params = new URLSearchParams(window.location.search);
-    const urlTraineeId = params.get("traineeId");
-    if (urlTraineeId) {
-        traineeSelect.value = urlTraineeId;
-        loadPerformance(Number(urlTraineeId));
+    async function initializePerformancePage() {
+        await loadTraineeList();
+        const params = new URLSearchParams(window.location.search);
+        const urlTraineeId = Number(params.get("traineeId"));
+        if (!Number.isFinite(urlTraineeId) || urlTraineeId <= 0) {
+            return;
+        }
+        traineeSelect.value = String(urlTraineeId);
+        if (traineeSelect.value === String(urlTraineeId)) {
+            await loadPerformance(urlTraineeId);
+        }
     }
+
+    initializePerformancePage().catch((err) => {
+        showMessage(msg, `Error initializing performance page: ${err.message}`, false);
+    });
 </script>
 <script src="/js/sidebar.js"></script>
 </body>

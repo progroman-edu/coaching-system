@@ -9,19 +9,26 @@ const attendancePct = document.getElementById("attendancePct");
 const matchesPlayed = document.getElementById("matchesPlayed");
 const trendForm = document.getElementById("trendForm");
 const trendTraineeId = document.getElementById("trendTraineeId");
-const trendMode = document.getElementById("trendMode");
 const trendCustomDateBtn = document.getElementById("trendCustomDateBtn");
 const trendWeekStartDate = document.getElementById("trendWeekStartDate");
 const trendMeta = document.getElementById("trendMeta");
-const trendChart = document.getElementById("trendChart");
+const trendChartRapid = document.getElementById("trendChartRapid");
+const trendChartBlitz = document.getElementById("trendChartBlitz");
+const trendChartBullet = document.getElementById("trendChartBullet");
 const traineeById = new Map();
 let customDateEnabled = false;
 
-function renderTrendEmpty(message) {
-    if (!trendChart) {
+function renderTrendEmpty(chartEl, message) {
+    if (!chartEl) {
         return;
     }
-    trendChart.innerHTML = `<div class="trend-empty">${message}</div>`;
+    chartEl.innerHTML = `<div class="trend-empty">${message}</div>`;
+}
+
+function renderAllTrendEmpty(message) {
+    renderTrendEmpty(trendChartRapid, message);
+    renderTrendEmpty(trendChartBlitz, message);
+    renderTrendEmpty(trendChartBullet, message);
 }
 
 function formatTrendDate(value) {
@@ -75,10 +82,6 @@ function getDateRangeFilter() {
         startDate: customStartDate,
         endDate
     };
-}
-
-function hasDateFilter(range) {
-    return Boolean(range?.startDate || range?.endDate);
 }
 
 function inDateRange(isoDate, range) {
@@ -137,37 +140,48 @@ function buildOnlineTrendPoints(games, username, range) {
 }
 
 async function loadOnlineRatingTrend(trainee, range) {
-    const mode = String(trendMode?.value || "rapid").toLowerCase();
     const username = String(trainee?.chessUsername || "").trim();
     if (!username) {
         throw new Error("Selected trainee has no Chess.com username.");
     }
     const history = await api.getChessComAllModeHistory(username, 12);
     const groupedGames = history?.groupedGames ?? {};
-    const games = Array.isArray(groupedGames[mode]) ? groupedGames[mode] : [];
-    const points = buildOnlineTrendPoints(games, username, range);
 
-    renderTrendChart(points);
+    const byMode = {
+        rapid: buildOnlineTrendPoints(Array.isArray(groupedGames.rapid) ? groupedGames.rapid : [], username, range),
+        blitz: buildOnlineTrendPoints(Array.isArray(groupedGames.blitz) ? groupedGames.blitz : [], username, range),
+        bullet: buildOnlineTrendPoints(Array.isArray(groupedGames.bullet) ? groupedGames.bullet : [], username, range)
+    };
+
+    renderTrendChart(trendChartRapid, byMode.rapid);
+    renderTrendChart(trendChartBlitz, byMode.blitz);
+    renderTrendChart(trendChartBullet, byMode.bullet);
+
     if (!trendMeta) {
         return;
     }
+
     const rangeLabel = `${range.startDate} to ${range.endDate}`;
-    if (!points.length) {
-        trendMeta.textContent = `${trainee.name}: no ${mode} online games found for ${rangeLabel}.`;
-        return;
-    }
-    const latest = points[points.length - 1];
-    const delta = Number(latest.change ?? 0);
-    const sign = delta > 0 ? "+" : "";
-    trendMeta.textContent = `${trainee.name}: online ${mode} trend (${rangeLabel}, ${points.length} games). Latest ${latest.rating} (${sign}${delta}).`;
+    const summary = ["rapid", "blitz", "bullet"].map((mode) => {
+        const points = byMode[mode];
+        if (!points.length) {
+            return `${mode}: no games`;
+        }
+        const latest = points[points.length - 1];
+        const delta = Number(latest.change ?? 0);
+        const sign = delta > 0 ? "+" : "";
+        return `${mode}: ${latest.rating} (${sign}${delta})`;
+    }).join(" | ");
+
+    trendMeta.textContent = `${trainee.name}: online trend for ${rangeLabel}. ${summary}.`;
 }
 
-function renderTrendChart(points) {
-    if (!trendChart) {
+function renderTrendChart(chartEl, points) {
+    if (!chartEl) {
         return;
     }
     if (!Array.isArray(points) || points.length === 0) {
-        renderTrendEmpty("No rating changes yet for this trainee.");
+        renderTrendEmpty(chartEl, "No rating changes yet for this mode.");
         return;
     }
 
@@ -224,7 +238,7 @@ function renderTrendChart(points) {
         return `<text x="${x}" y="${height - 12}" text-anchor="middle" class="trend-axis-label">${formatTrendDate(points[index].timestamp)}</text>`;
     }).join("");
 
-    trendChart.innerHTML = `
+    chartEl.innerHTML = `
         <svg viewBox="0 0 ${width} ${height}" class="trend-svg" preserveAspectRatio="none" role="presentation">
             ${yGridLines}
             <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" class="trend-axis" />
@@ -238,7 +252,7 @@ function renderTrendChart(points) {
 
 async function loadRatingTrend(traineeId, traineeName) {
     if (!traineeId) {
-        renderTrendEmpty("Select a trainee to view rating changes over time.");
+        renderAllTrendEmpty("Select a trainee to view rating changes over time.");
         if (trendMeta) {
             trendMeta.textContent = "Select a trainee to view rating changes over time.";
         }
@@ -253,7 +267,9 @@ async function loadRatingTrend(traineeId, traineeName) {
     }
 
     const data = await api.getRatingTrend(traineeId);
-    renderTrendChart(data);
+    renderTrendChart(trendChartRapid, data);
+    renderTrendEmpty(trendChartBlitz, "Online Blitz history unavailable for this trainee.");
+    renderTrendEmpty(trendChartBullet, "Online Bullet history unavailable for this trainee.");
 
     if (!trendMeta) {
         return;
@@ -265,7 +281,7 @@ async function loadRatingTrend(traineeId, traineeName) {
     const latest = data[data.length - 1];
     const delta = Number(latest.change ?? 0);
     const sign = delta > 0 ? "+" : "";
-    trendMeta.textContent = `${traineeName}: local trend latest rating ${latest.rating} (${sign}${delta}) across ${data.length} recorded changes (online history unavailable).`;
+    trendMeta.textContent = `${traineeName}: local rapid trend ${latest.rating} (${sign}${delta}) across ${data.length} recorded changes (online blitz/bullet unavailable).`;
 }
 
 async function loadTrendTrainees() {
@@ -296,7 +312,7 @@ async function loadTrendTrainees() {
         trendTraineeId.value = String(first.id);
         await loadRatingTrend(Number(first.id), first.name ?? "Trainee");
     } else {
-        renderTrendEmpty("No trainees found. Add trainees to view rating changes.");
+        renderAllTrendEmpty("No trainees found. Add trainees to view rating changes.");
         if (trendMeta) {
             trendMeta.textContent = "No trainees found. Add trainees to view rating changes.";
         }
@@ -317,7 +333,7 @@ async function loadDashboard() {
 
 loadDashboard();
 loadTrendTrainees().catch((err) => {
-    renderTrendEmpty("Unable to load trainees for rating graph.");
+    renderAllTrendEmpty("Unable to load trainees for rating graph.");
     showMessage(msg, err.message, false);
 });
 

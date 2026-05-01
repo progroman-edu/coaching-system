@@ -4,6 +4,7 @@ package com.chesscoach.main.controller;
 import com.chesscoach.main.config.ApiPaths;
 import com.chesscoach.main.dto.analytics.DashboardAnalyticsResponse;
 import com.chesscoach.main.dto.analytics.RatingTrendPointResponse;
+import com.chesscoach.main.dto.analytics.TraineePerformanceResponse;
 import com.chesscoach.main.dto.common.ApiResponse;
 import com.chesscoach.main.service.AnalyticsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,16 @@ public class AnalyticsController {
     public ResponseEntity<ApiResponse<DashboardAnalyticsResponse>> dashboard(HttpServletRequest request) {
         DashboardAnalyticsResponse data = analyticsService.getDashboard();
         return ResponseEntity.ok(ApiResponse.ok("Dashboard analytics", data, request.getRequestURI()));
+    }
+
+    @GetMapping("/performance/{traineeId}")
+    @Operation(summary = "Get trainee performance", description = "Retrieve match record, ratings, and attendance summary for a trainee")
+    public ResponseEntity<ApiResponse<TraineePerformanceResponse>> performance(
+        @PathVariable Long traineeId,
+        HttpServletRequest request
+    ) {
+        TraineePerformanceResponse data = analyticsService.getPerformance(traineeId);
+        return ResponseEntity.ok(ApiResponse.ok("Trainee performance analytics", data, request.getRequestURI()));
     }
 
     @GetMapping("/rating-trend/{traineeId}")

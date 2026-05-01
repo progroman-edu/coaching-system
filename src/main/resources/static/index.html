@@ -7,6 +7,7 @@
     <script src="/js/page-stability.js"></script>
     <title>Coach Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/icons/favicon.ico">
 </head>
 <body>
 <div class="layout">
@@ -15,6 +16,8 @@
         <div class="brand"> </div>
         <a class="nav-link active" href="/index.html">Dashboard</a>
         <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/register.html">Register</a>
+        <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
         <a class="nav-link" href="/matches.html">Tournament</a>
         <a class="nav-link" href="/match-history.html">Match History</a>
         <a class="nav-link" href="/attendance.html">Attendance</a>
@@ -47,28 +50,62 @@
 
         <section class="panel">
             <h3>Analytics & Reports</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                <a href="/analytics/performance.html" class="secondary" style="padding: 1rem; text-decoration: none; text-align: center; border-radius: 4px; display: block;">
-                    Performance Analytics
+            <div class="dashboard-action-grid">
+                <a href="/analytics/performance.html" class="dashboard-action-card">
+                    <span class="dashboard-action-icon"><img src="/icons/users.png" alt="" loading="lazy"></span>
+                    <span class="dashboard-action-copy">
+                        <strong>Performance Analytics</strong>
+                        <span>Inspect trainee-by-trainee performance breakdowns.</span>
+                    </span>
                 </a>
-                <div class="panel">
-                    <h3 style="margin-top: 0;">Rating Change Graph</h3>
-                    <form id="trendForm" class="row">
-                        <select id="trendTraineeId" required>
-                            <option value="">Select trainee</option>
-                        </select>
-                        <select id="trendMode" required>
-                            <option value="rapid" selected>Rapid</option>
-                            <option value="blitz">Blitz</option>
-                            <option value="bullet">Bullet</option>
-                        </select>
-                        <button id="trendCustomDateBtn" class="secondary" type="button">Custom Date</button>
-                        <input type="date" id="trendWeekStartDate" aria-label="Custom week start date" style="display:none;">
-                        <button class="secondary" type="submit">Load Graph</button>
-                    </form>
-                    <p id="trendMeta" class="subtitle" style="margin: 8px 0 0;">Graph defaults to last 7 days from today. Use Custom Date to choose a different 1-week window.</p>
-                    <div id="trendChart" class="trend-chart" role="img" aria-label="Trainee rating trend chart"></div>
-                </div>
+                <a href="/leaderboard.html" class="dashboard-action-card">
+                    <span class="dashboard-action-icon"><img src="/icons/leaderboard.png" alt="" loading="lazy"></span>
+                    <span class="dashboard-action-copy">
+                        <strong>Leaderboard</strong>
+                        <span>Review ranking movement, sync status, and top performers.</span>
+                    </span>
+                </a>
+                <a href="/reports.html" class="dashboard-action-card">
+                    <span class="dashboard-action-icon"><img src="/icons/report.png" alt="" loading="lazy"></span>
+                    <span class="dashboard-action-copy">
+                        <strong>Reports Hub</strong>
+                        <span>Export roster, attendance, and match reports from one place.</span>
+                    </span>
+                </a>
+                <a href="/register.html" class="dashboard-action-card">
+                    <span class="dashboard-action-icon"><img src="/icons/register.png" alt="" loading="lazy"></span>
+                    <span class="dashboard-action-copy">
+                        <strong>Register Trainee</strong>
+                        <span>Create new trainee records and manage photo onboarding.</span>
+                    </span>
+                </a>
+            </div>
+        </section>
+
+        <section class="panel dashboard-trend-shell">
+            <h3>Rating Change Graph</h3>
+            <form id="trendForm" class="row">
+                <select id="trendTraineeId" required>
+                    <option value="">Select trainee</option>
+                </select>
+                <button id="trendCustomDateBtn" class="secondary" type="button">Custom Date</button>
+                <input type="date" id="trendWeekStartDate" aria-label="Custom week start date" style="display:none;">
+                <button class="secondary" type="submit">Load Graph</button>
+            </form>
+            <p id="trendMeta" class="subtitle" style="margin: 8px 0 0;">Graph defaults to last 7 days from today. Use Custom Date to choose a different 1-week window for all modes.</p>
+            <div class="trend-grid-3">
+                <article class="trend-mode-card">
+                    <h4 class="trend-mode-title">Rapid</h4>
+                    <div id="trendChartRapid" class="trend-chart" role="img" aria-label="Rapid rating trend chart"></div>
+                </article>
+                <article class="trend-mode-card">
+                    <h4 class="trend-mode-title">Blitz</h4>
+                    <div id="trendChartBlitz" class="trend-chart" role="img" aria-label="Blitz rating trend chart"></div>
+                </article>
+                <article class="trend-mode-card">
+                    <h4 class="trend-mode-title">Bullet</h4>
+                    <div id="trendChartBullet" class="trend-chart" role="img" aria-label="Bullet rating trend chart"></div>
+                </article>
             </div>
         </section>
     </main>

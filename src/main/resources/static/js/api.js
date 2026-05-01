@@ -84,6 +84,7 @@ export const api = {
         });
         return request(`/trainees?${query.toString()}`);
     },
+    getTrainee: (id) => request(`/trainees/${id}`),
     createTrainee: (payload) => request("/trainees", { method: "POST", body: JSON.stringify(payload) }),
     updateTrainee: (id, payload) => request(`/trainees/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
     deleteTrainee: (id) => request(`/trainees/${id}`, { method: "DELETE" }),

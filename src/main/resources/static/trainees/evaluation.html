@@ -1,0 +1,120 @@
+<!-- This page renders the trainee evaluation workspace. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <script src="/js/page-stability.js"></script>
+    <title>Trainee Evaluation</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/icons/favicon.ico">
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/register.html">Register</a>
+        <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+
+        <section class="panel evaluation-hero">
+            <div class="evaluation-hero-media" id="traineeAvatar"></div>
+            <div class="evaluation-hero-copy">
+                <h1 class="title" id="traineeName">Trainee Evaluation</h1>
+                <p class="subtitle" id="traineeMeta">Loading trainee profile...</p>
+                <div class="evaluation-summary-strip">
+                    <div class="evaluation-summary-card">
+                        <span class="evaluation-summary-label">Overall Score</span>
+                        <strong id="overallPercent">0%</strong>
+                    </div>
+                    <div class="evaluation-summary-card">
+                        <span class="evaluation-summary-label">Average</span>
+                        <strong id="overallAverage">0/10</strong>
+                    </div>
+                    <div class="evaluation-summary-card">
+                        <span class="evaluation-summary-label">Band</span>
+                        <strong id="overallBand">Needs Work</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="evaluation-hero-actions">
+                <button id="detailBtn" class="secondary" type="button">Profile</button>
+                <button id="backBtn" class="secondary" type="button">Back</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="evaluation-heading-row">
+                <div>
+                    <h3>Performance Evaluation</h3>
+                    <p class="subtitle" id="lastSaved">No saved evaluation yet.</p>
+                </div>
+                <button id="resetBtn" class="secondary" type="button">Reset</button>
+            </div>
+            <form id="evaluationForm">
+                <div class="evaluation-grid">
+                    <label class="evaluation-card">
+                        <span class="evaluation-card-top">
+                            <span>
+                                <strong>Opening</strong>
+                                <span class="evaluation-card-weight">25%</span>
+                            </span>
+                            <span class="evaluation-card-score" id="openingValue">5/10</span>
+                        </span>
+                        <input type="range" name="opening" min="1" max="10" step="1" value="5">
+                        <span class="evaluation-card-scale">Structure, preparation, first-phase confidence.</span>
+                    </label>
+                    <label class="evaluation-card">
+                        <span class="evaluation-card-top">
+                            <span>
+                                <strong>Middle Game</strong>
+                                <span class="evaluation-card-weight">25%</span>
+                            </span>
+                            <span class="evaluation-card-score" id="middleGameValue">5/10</span>
+                        </span>
+                        <input type="range" name="middleGame" min="1" max="10" step="1" value="5">
+                        <span class="evaluation-card-scale">Planning, initiative, and tactical discipline.</span>
+                    </label>
+                    <label class="evaluation-card">
+                        <span class="evaluation-card-top">
+                            <span>
+                                <strong>End Game</strong>
+                                <span class="evaluation-card-weight">25%</span>
+                            </span>
+                            <span class="evaluation-card-score" id="endGameValue">5/10</span>
+                        </span>
+                        <input type="range" name="endGame" min="1" max="10" step="1" value="5">
+                        <span class="evaluation-card-scale">Conversion, technique, and board simplification.</span>
+                    </label>
+                    <label class="evaluation-card">
+                        <span class="evaluation-card-top">
+                            <span>
+                                <strong>Puzzle</strong>
+                                <span class="evaluation-card-weight">25%</span>
+                            </span>
+                            <span class="evaluation-card-score" id="puzzleValue">5/10</span>
+                        </span>
+                        <input type="range" name="puzzle" min="1" max="10" step="1" value="5">
+                        <span class="evaluation-card-scale">Pattern recognition, calculation, and accuracy.</span>
+                    </label>
+                </div>
+                <div class="evaluation-submit-row">
+                    <button type="submit">Save Evaluation</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/evaluation.js"></script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

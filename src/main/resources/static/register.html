@@ -1,0 +1,76 @@
+<!-- This file renders the trainee registration page. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
+    <script src="/js/page-stability.js"></script>
+    <title>Register Trainee</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/icons/favicon.ico">
+</head>
+<body>
+<div class="layout">
+    <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
+    <aside class="sidebar">
+        <div class="brand"> </div>
+        <a class="nav-link" href="/index.html">Dashboard</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
+        <a class="nav-link active" href="/register.html">Register</a>
+        <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
+        <a class="nav-link" href="/match-history.html">Match History</a>
+        <a class="nav-link" href="/attendance.html">Attendance</a>
+        <a class="nav-link" href="/reports.html">Reports</a>
+    </aside>
+    <main class="content">
+        <div id="msg" class="msg" style="display:none;"></div>
+
+        <section class="panel">
+            <h1 id="pageTitle" class="title">Register Trainee</h1>
+            <p id="pageSubtitle" class="subtitle">Create a new trainee profile and prepare the roster for coaching.</p>
+        </section>
+
+        <section class="panel">
+            <h3 id="traineeFormTitle">Register New Trainee</h3>
+            <form id="traineeForm" class="grid cols-2">
+                <input type="hidden" name="id">
+                <div><label>Name</label><input name="name" required></div>
+                <div><label>Age</label><input type="number" name="age" required></div>
+                <div><label>Address</label><input name="address" required></div>
+                <div><label>Grade Level</label><input name="gradeLevel" required></div>
+                <div>
+                    <label>Department</label>
+                    <select name="department" required>
+                        <option value="">-- Select --</option>
+                        <option value="High School">High School</option>
+                        <option value="College">College</option>
+                    </select>
+                </div>
+                <div><label>Chess.com Username</label><input name="chessUsername" placeholder="e.g. hikaru" required></div>
+                <div style="grid-column:1 / -1; display:flex; gap:8px;">
+                    <button id="saveTraineeBtn" type="submit">Save Trainee</button>
+                    <button id="cancelEditBtn" type="button" class="secondary" style="display:none;">Cancel Edit</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Upload Trainee Photo</h3>
+            <form id="photoForm" class="grid cols-2">
+                <div style="grid-column:1 / -1;">
+                    <label>Select Trainee</label>
+                    <div id="photoProfiles" class="participant-picker"></div>
+                    <div id="photoSelectedLabel" class="participant-meta">Selected: none</div>
+                    <input type="hidden" name="traineeId" required>
+                </div>
+                <div><label>Image File</label><input type="file" name="file" accept="image/*" required></div>
+                <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Upload</button></div>
+            </form>
+        </section>
+    </main>
+</div>
+<script type="module" src="/js/register.js"></script>
+<script src="/js/sidebar.js"></script>
+</body>
+</html>

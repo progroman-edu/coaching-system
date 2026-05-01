@@ -1,11 +1,11 @@
-<!-- This file renders the trainee browse page. -->
+<!-- This file renders the trainee leaderboard page. -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>if(localStorage.getItem("sidebarOpen")==="1"){document.documentElement.classList.add("sidebar-open-persist");}</script>
     <script src="/js/page-stability.js"></script>
-    <title>Trainees</title>
+    <title>Leaderboard</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="icon" href="/icons/favicon.ico">
 </head>
@@ -15,9 +15,9 @@
     <aside class="sidebar">
         <div class="brand"> </div>
         <a class="nav-link" href="/index.html">Dashboard</a>
-        <a class="nav-link active" href="/trainees.html">Trainees</a>
+        <a class="nav-link" href="/trainees.html">Trainees</a>
         <a class="nav-link" href="/register.html">Register</a>
-        <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
+        <a class="nav-link active" href="/leaderboard.html">Leaderboard</a>
         <a class="nav-link" href="/matches.html">Tournament</a>
         <a class="nav-link" href="/match-history.html">Match History</a>
         <a class="nav-link" href="/attendance.html">Attendance</a>
@@ -27,12 +27,12 @@
         <div id="msg" class="msg" style="display:none;"></div>
 
         <section class="panel">
-            <h1 class="title">Trainees</h1>
-            <p class="subtitle">Browse the roster in card view. Registration and leaderboard management now live in their own tabs.</p>
+            <h1 class="title">Leaderboard</h1>
+            <p class="subtitle">Ranked trainee view with filters, sort controls, coach notes, and Chess.com sync actions.</p>
         </section>
 
         <section class="panel">
-            <h3>Browse Controls</h3>
+            <h3>Leaderboard Controls</h3>
             <form id="filterForm" class="grid cols-4">
                 <div style="grid-column:1 / -1;">
                     <label>Search</label>
@@ -48,11 +48,26 @@
                 </div>
                 <div><label>Rating Min</label><input type="number" name="ratingMin"></div>
                 <div>
+                    <label>Rank Order</label>
+                    <select name="rankingOrder">
+                        <option value="asc" selected>Top Rank First</option>
+                        <option value="desc">Bottom Rank First</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Sync Mode</label>
+                    <select id="syncMode">
+                        <option value="rapid" selected>Rapid</option>
+                        <option value="blitz">Blitz</option>
+                        <option value="bullet">Bullet</option>
+                    </select>
+                </div>
+                <div>
                     <label>Page Size</label>
                     <select name="size">
-                        <option value="12" selected>12</option>
-                        <option value="24">24</option>
-                        <option value="36">36</option>
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
                     </select>
                 </div>
                 <div class="form-actions-inline">
@@ -61,24 +76,46 @@
                 <div class="form-actions-inline">
                     <button id="clearFiltersBtn" type="button" class="secondary">Clear</button>
                 </div>
+                <div class="form-actions-inline">
+                    <button id="syncRatingsBtn" type="button" class="secondary">Sync Ratings</button>
+                </div>
             </form>
             <div id="activeFilterChips" class="filter-chips"></div>
         </section>
 
         <section class="panel">
             <div class="table-headline">
-                <h3>Roster Cards</h3>
+                <h3>Trainee Leaderboard</h3>
                 <div class="table-pagination">
                     <button id="prevPageBtn" type="button" class="secondary">Prev</button>
                     <span id="pageIndicator">Page 1</span>
                     <button id="nextPageBtn" type="button" class="secondary">Next</button>
                 </div>
             </div>
-            <div id="traineeCards" class="license-grid"></div>
+            <div class="table-wrap">
+                <table class="trainee-table">
+                    <thead>
+                    <tr>
+                        <th><button type="button" class="sort-btn" data-sort="ranking">Rank</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="name">Trainee</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="rapidCurrentRating">Current</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="latestRatingChange">Delta Latest</button></th>
+                        <th><button id="modePeakHeader" type="button" class="sort-btn" data-sort="modePeak">Mode Peak (Rapid)</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="department">Department</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="attendancePercentageLast30Days">Attendance (30d)</button></th>
+                        <th><button type="button" class="sort-btn" data-sort="lastActivityAt">Last Activity</button></th>
+                        <th>Chess.com</th>
+                        <th>Coach Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="traineeRows"></tbody>
+                </table>
+            </div>
         </section>
     </main>
 </div>
-<script type="module" src="/js/trainees.js"></script>
+<script type="module" src="/js/leaderboard.js"></script>
 <script src="/js/sidebar.js"></script>
 </body>
 </html>
