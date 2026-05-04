@@ -7,6 +7,7 @@
     <script src="/js/page-stability.js"></script>
     <title>Tournament</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/bracket.css">
     <link rel="icon" href="/icons/favicon.ico">
 </head>
 <body>
@@ -14,11 +15,11 @@
     <button id="sidebarToggle" class="sidebar-toggle secondary" type="button" aria-label="Toggle sidebar">&#9776;</button>
     <aside class="sidebar">
         <div class="brand"> </div>
-        <a class="nav-link" href="/index.html">Dashboard</a>
+          <a class="nav-link" href="/index.html">Dashboard</a>
         <a class="nav-link" href="/trainees.html">Trainees</a>
         <a class="nav-link" href="/register.html">Register</a>
         <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
-        <a class="nav-link active" href="/matches.html">Tournament</a>
+        <a class="nav-link" href="/matches.html">Tournament</a>
         <a class="nav-link" href="/match-history.html">Match History</a>
         <a class="nav-link" href="/attendance.html">Attendance</a>
         <a class="nav-link" href="/reports.html">Reports</a>
@@ -33,46 +34,76 @@
             <h3>Generate Pairings</h3>
             <form id="pairForm" class="grid cols-2">
                 <div><label>Format</label><select name="format"><option>SWISS</option><option>ROUND_ROBIN</option></select></div>
-                <div><label>Round Number</label><input type="number" name="roundNumber" value="1" required></div>
+                <div>
+                    <label>Maximum Rounds</label>
+                    <div id="maxRoundsDisplay" class="participant-meta">Select participants to calculate</div>
+                </div>
                 <div style="grid-column:1 / -1;">
                     <label>Select Participants</label>
                     <div id="pairProfiles" class="participant-picker"></div>
                     <div id="pairSelectedCount" class="participant-meta">Selected: 0</div>
                     <input type="hidden" name="traineeIds">
+                    <input type="hidden" name="roundNumber" value="0">
                 </div>
                 <div style="grid-column:1 / -1;"><button class="secondary" type="submit">Generate</button></div>
             </form>
         </section>
 
         <section class="panel">
-            <h3>Swiss Pairings Bracket</h3>
-            <div class="participant-meta">Double-click a player to instantly record that player as the winner.</div>
+            <h3>Latest Swiss Pairings</h3>
+            <div class="participant-meta">Double-click a player to record a winner. Enable Edit Match Results in Settings to revise completed matches.</div>
             <div id="swissBracket" class="swiss-bracket empty">
                 <div class="swiss-empty">Generate SWISS pairings to show the bracket.</div>
             </div>
         </section>
 
         <section class="panel">
-            <h3>Submit Result</h3>
-            <form id="resultForm" class="grid cols-4">
-                <div style="grid-column:1 / -1;">
-                    <label>Select Match</label>
-                    <select name="matchRef" required>
-                        <option value="">Select a loaded F2F match</option>
-                    </select>
-                    <input type="hidden" name="matchId" required>
+            <div class="bracket-selector">
+                <label>Select Tournament</label>
+                <select id="matchSelect" required>
+                    <option value="">Loading tournaments...</option>
+                </select>
+                <button id="loadBracketBtn" class="secondary" type="button">Load</button>
+                <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div id="bracketContainer" class="bracket-wrapper" style="display:none;">
+                <div class="bracket-navigation">
+                    <button id="prevRoundBtn" class="secondary" type="button" disabled>← Previous Round</button>
+                    <span id="currentRoundLabel">Round 1</span>
+                    <button id="nextRoundBtn" class="secondary" type="button" disabled>Next Round →</button>
                 </div>
-                <div style="grid-column:1 / -1;">
-                    <label>Result</label>
-                    <select name="resultType" required>
-                        <option value="">Select result</option>
-                        <option value="WHITE_WIN">White won (1-0)</option>
-                        <option value="BLACK_WIN">Black won (0-1)</option>
-                        <option value="DRAW">Draw (0.5-0.5)</option>
-                    </select>
+                <div id="bracketScroll" class="bracket-scroll"></div>
+            </div>
+            <div id="noBracketMsg" class="info-box">
+                Generate matches to view projected rounds and results.
+            </div>
+        </section>
+
+        <section class="panel">
+            <h3>Tournament Overview</h3>
+            <div id="matchDetailsContainer" style="display:none;">
+                <div class="match-details-grid">
+                    <div>
+                        <label>Tournament Format</label>
+                        <span id="detailFormat">-</span>
+                    </div>
+                    <div>
+                        <label>Total Participants</label>
+                        <span id="detailParticipants">-</span>
+                    </div>
+                    <div>
+                        <label>Current Round</label>
+                        <span id="detailRound">-</span>
+                    </div>
+                    <div>
+                        <label>Total Rounds</label>
+                        <span id="detailTotalRounds">-</span>
+                    </div>
                 </div>
-                <div style="grid-column:1 / -1;"><button type="submit">Record Result</button></div>
-            </form>
+            </div>
         </section>
     </main>
 </div>
@@ -83,6 +114,7 @@
     </div>
 </div>
 <script type="module" src="/js/matches.js"></script>
+<script type="module" src="/js/bracket.js"></script>
 <script src="/js/sidebar.js"></script>
 </body>
 </html>

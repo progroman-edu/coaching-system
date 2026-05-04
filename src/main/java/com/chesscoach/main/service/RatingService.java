@@ -10,6 +10,9 @@ import java.util.List;
 
 public interface RatingService {
     void applyMatchResultRatingUpdate(MatchResult matchResult);
+
+    void rebuildFromMatchHistory();
+
     List<TraineeRatingHistoryResponse> getRatingHistoryByTrainee(Long traineeId);
     Page<TraineeRatingHistoryResponse> getRatingHistoryByTraineePaginated(Long traineeId, Pageable pageable);
 }

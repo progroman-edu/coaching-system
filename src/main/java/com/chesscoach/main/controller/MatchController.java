@@ -50,6 +50,13 @@ public class MatchController {
             .body(ApiResponse.created("Match schedule created", data, request.getRequestURI()));
     }
 
+    @GetMapping
+    @Operation(summary = "List matches", description = "List all matches and their current status")
+    public ResponseEntity<ApiResponse<List<MatchSummaryResponse>>> listMatches(HttpServletRequest request) {
+        List<MatchSummaryResponse> data = matchService.listMatches();
+        return ResponseEntity.ok(ApiResponse.ok("Matches retrieved", data, request.getRequestURI()));
+    }
+
     @PostMapping("/generate/swiss")
     @Operation(summary = "Generate Swiss pairings", description = "Generate Swiss system pairings for a round")
     public ResponseEntity<ApiResponse<List<MatchSummaryResponse>>> generateSwiss(
@@ -78,6 +85,27 @@ public class MatchController {
     ) {
         MatchResultResponse data = matchService.recordResult(requestBody);
         return ResponseEntity.ok(ApiResponse.ok("Match result recorded", data, request.getRequestURI()));
+    }
+
+    @GetMapping("/calculate-max-rounds/{format}/{participantCount}")
+    @Operation(summary = "Calculate max rounds", description = "Calculate the maximum recommended rounds for a tournament format")
+    public ResponseEntity<ApiResponse<Integer>> calculateMaxRounds(
+        @PathVariable String format,
+        @PathVariable int participantCount,
+        HttpServletRequest request
+    ) {
+        int maxRounds = matchService.calculateMaxRoundsForFormat(format, participantCount);
+        return ResponseEntity.ok(ApiResponse.ok("Max rounds calculated", maxRounds, request.getRequestURI()));
+    }
+
+    @PostMapping("/{matchId}/rollback")
+    @Operation(summary = "Rollback match", description = "Cancel a pending match or undo a recorded match result")
+    public ResponseEntity<ApiResponse<MatchSummaryResponse>> rollbackMatch(
+        @PathVariable Long matchId,
+        HttpServletRequest request
+    ) {
+        MatchSummaryResponse data = matchService.rollbackMatch(matchId);
+        return ResponseEntity.ok(ApiResponse.ok("Match rolled back", data, request.getRequestURI()));
     }
 
     @GetMapping("/history/{traineeId}")

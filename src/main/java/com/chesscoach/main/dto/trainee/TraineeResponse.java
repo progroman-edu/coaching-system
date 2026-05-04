@@ -1,4 +1,3 @@
-// This DTO defines response payload fields for Trainee endpoints.
 package com.chesscoach.main.dto.trainee;
 
 import lombok.Getter;
@@ -6,7 +5,6 @@ import lombok.Setter;
 import org.springframework.lang.Nullable;
 
 import java.time.OffsetDateTime;
-import java.util.Optional;
 
 @Setter
 @Getter

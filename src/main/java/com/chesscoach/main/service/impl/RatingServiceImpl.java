@@ -2,12 +2,11 @@
 package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.dto.match.TraineeRatingHistoryResponse;
-import com.chesscoach.main.model.BlitzRating;
-import com.chesscoach.main.model.BulletRating;
 import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.RatingsHistory;
 import com.chesscoach.main.model.Trainee;
+import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.RatingsHistoryRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.RatingService;
@@ -25,13 +24,19 @@ public class RatingServiceImpl implements RatingService {
 
     private final TraineeRepository traineeRepository;
     private final RatingsHistoryRepository ratingsHistoryRepository;
+    private final MatchResultRepository matchResultRepository;
 
     @Value("${app.rating.k-factor:20}")
     private int kFactor;
 
-    public RatingServiceImpl(TraineeRepository traineeRepository, RatingsHistoryRepository ratingsHistoryRepository) {
+    public RatingServiceImpl(
+        TraineeRepository traineeRepository,
+        RatingsHistoryRepository ratingsHistoryRepository,
+        MatchResultRepository matchResultRepository
+    ) {
         this.traineeRepository = traineeRepository;
         this.ratingsHistoryRepository = ratingsHistoryRepository;
+        this.matchResultRepository = matchResultRepository;
     }
 
     @Override
@@ -59,9 +64,28 @@ public class RatingServiceImpl implements RatingService {
         recomputeRankings();
     }
 
+    @Override
+    @Transactional
+    public void rebuildFromMatchHistory() {
+        List<Trainee> trainees = traineeRepository.findAll();
+        for (Trainee trainee : trainees) {
+            updateRapidRating(trainee, 1200);
+        }
+        traineeRepository.saveAll(trainees);
+        ratingsHistoryRepository.deleteAllInBatch();
+
+        List<MatchResult> results = matchResultRepository.findAllByOrderByPlayedAtAsc();
+        for (MatchResult result : results) {
+            applyMatchResultRatingUpdate(result);
+        }
+    }
+
     private int getRapidCurrentRating(Trainee trainee) {
         RapidRating rapid = trainee.getRapidRating();
-        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : 1200;
+        if (rapid == null || rapid.getCurrentRating() == null) {
+            return 1200;
+        }
+        return rapid.getCurrentRating();
     }
 
     private void updateRapidRating(Trainee trainee, int newRating) {
@@ -127,4 +151,11 @@ public class RatingServiceImpl implements RatingService {
         return response;
     }
 }
+
+
+
+
+
+
+
 

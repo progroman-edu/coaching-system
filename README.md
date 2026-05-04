@@ -24,49 +24,49 @@ Spring Boot application for managing chess trainees, attendance, matches, analyt
 
 ## API Overview
 
-Base path: `/api`
+Base path: `/api/v1`
 
 ### Trainees
 
-- `POST /api/trainees`
-- `GET /api/trainees`
-- `GET /api/trainees/{id}`
-- `PUT /api/trainees/{id}`
-- `POST /api/trainees/{id}/photo` (multipart field: `file`)
-- `DELETE /api/trainees/{id}`
+- `POST /api/v1/trainees`
+- `GET /api/v1/trainees`
+- `GET /api/v1/trainees/{id}`
+- `PUT /api/v1/trainees/{id}`
+- `POST /api/v1/trainees/{id}/photo` (multipart field: `file`)
+- `DELETE /api/v1/trainees/{id}`
 
 ### Attendance
 
-- `POST /api/attendance`
-- `GET /api/attendance/report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&traineeId={optional}`
+- `POST /api/v1/attendance`
+- `GET /api/v1/attendance/report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&traineeId={optional}`
 
 ### Matches
 
-- `POST /api/matches`
-- `POST /api/matches/generate/swiss`
-- `POST /api/matches/generate/round-robin`
-- `POST /api/matches/result`
-- `GET /api/matches/history/{traineeId}`
+- `POST /api/v1/matches`
+- `POST /api/v1/matches/generate/swiss`
+- `POST /api/v1/matches/generate/round-robin`
+- `POST /api/v1/matches/result`
+- `GET /api/v1/matches/history/{traineeId}`
 
 ### Analytics
 
-- `GET /api/analytics/dashboard`
-- `GET /api/analytics/performance/{traineeId}`
-- `GET /api/analytics/rating-trend/{traineeId}`
+- `GET /api/v1/analytics/dashboard`
+- `GET /api/v1/analytics/performance/{traineeId}`
+- `GET /api/v1/analytics/rating-trend/{traineeId}`
 
 ### Reports
 
-- `GET /api/reports/export?type=trainees|attendance|matches&format=csv`
-- `POST /api/reports/import/trainees` (multipart field: `file`)
-- `GET /api/reports/download/{fileName}`
+- `GET /api/v1/reports/export?type=trainees|attendance|matches&format=csv`
+- `POST /api/v1/reports/import/trainees` (multipart field: `file`)
+- `GET /api/v1/reports/download/{fileName}`
 
 ### Chess.com
 
-- `GET /api/chesscom/{username}/rating`
-- `GET /api/chesscom/{username}/match-history/archives`
-- `GET /api/chesscom/{username}/match-history/{year}/{month}`
-- `GET /api/chesscom/{username}/match-history/all-modes?limitArchives={optional}`
-- `POST /api/chesscom/trainees/{traineeId}/sync-rating?mode=rapid|blitz|bullet`
+- `GET /api/v1/chesscom/{username}/rating`
+- `GET /api/v1/chesscom/{username}/match-history/archives`
+- `GET /api/v1/chesscom/{username}/match-history/{year}/{month}`
+- `GET /api/v1/chesscom/{username}/match-history/all-modes?limitArchives={optional}`
+- `POST /api/v1/chesscom/trainees/{traineeId}/sync-rating?mode=rapid|blitz|bullet`
 
 Note: Chess.com sync currently supports only `rapid`, `blitz`, and `bullet`.
 

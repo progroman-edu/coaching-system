@@ -1,6 +1,22 @@
 // This service implementation contains business logic for Match operations.
 package com.chesscoach.main.service.impl;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.chesscoach.main.dto.match.MatchCreateRequest;
 import com.chesscoach.main.dto.match.MatchGenerationRequest;
 import com.chesscoach.main.dto.match.MatchResultRequest;
@@ -26,20 +42,6 @@ import com.chesscoach.main.service.RatingService;
 import com.chesscoach.main.service.SwissTournamentService;
 import com.chesscoach.main.util.RoundRobinGenerator;
 import com.chesscoach.main.util.SwissPairingGenerator.Pairing;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class MatchServiceImpl implements MatchService {
@@ -74,7 +76,10 @@ public class MatchServiceImpl implements MatchService {
 
     private int getRapidCurrentRating(Trainee trainee) {
         RapidRating rapid = trainee.getRapidRating();
-        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
+        if (rapid == null || rapid.getCurrentRating() == null) {
+            return defaultRating;
+        }
+        return rapid.getCurrentRating();
     }
 
     @Override
@@ -99,31 +104,51 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<MatchSummaryResponse> listMatches() {
+        List<Match> matches = matchRepository.findAll(
+            Sort.by(Sort.Direction.DESC, "scheduledDate").and(Sort.by(Sort.Direction.DESC, "id"))
+        );
+        List<MatchSummaryResponse> summaries = new ArrayList<>();
+        for (Match match : matches) {
+            List<MatchParticipant> participants = matchParticipantRepository.findByMatchIdOrderByBoardNumberAsc(match.getId());
+            List<Long> traineeIds = participants.stream().map(p -> p.getTrainee().getId()).toList();
+            Map<Long, Trainee> traineeMap = traineeRepository.findAllById(traineeIds).stream()
+                .collect(Collectors.toMap(Trainee::getId, Function.identity()));
+            summaries.add(toSummary(match, traineeMap, resolveStoredResult(match)));
+        }
+        return summaries;
+    }
+
+    @Override
     @Transactional
     public List<MatchSummaryResponse> generateSwiss(MatchGenerationRequest request) {
-        log.info("Generating Swiss pairings for round {}", request.getRoundNumber());
+        List<Long> requestedTraineeIds = normalizeTraineeIds(request.getTraineeIds());
+        List<Trainee> tournamentTrainees = requestedTraineeIds.isEmpty()
+            ? traineeRepository.findAllWithRatingsOrderedByRating()
+            : fetchTrainees(requestedTraineeIds);
+        if (tournamentTrainees.isEmpty()) {
+            throw new ResourceNotFoundException("No trainees available for Swiss pairing");
+        }
+        List<Long> tournamentTraineeIds = tournamentTrainees.stream().map(Trainee::getId).toList();
+
+        // Auto-calculate roundNumber if not provided
+        Integer requestRound = request.getRoundNumber();
+        int roundNumber = (requestRound != null && requestRound > 0)
+            ? requestRound
+            : autoCalculateNextRound(MatchFormat.SWISS, tournamentTraineeIds);
         
-        // Get pairings from new Swiss tournament service
-        List<Pairing> pairings = swissTournamentService.generateNextRound(request.getRoundNumber());
+        log.info("Generating Swiss pairings for {} trainees, round {}", tournamentTraineeIds.size(), roundNumber);
+        
+        List<Pairing> pairings = swissTournamentService.generateNextRound(tournamentTraineeIds, roundNumber);
         
         // Map trainee IDs for lookup
-        List<Long> allTraineeIds = new ArrayList<>();
-        for (Pairing pairing : pairings) {
-            allTraineeIds.add(pairing.whiteTraineeId());
-            if (pairing.blackTraineeId() != null) {
-                allTraineeIds.add(pairing.blackTraineeId());
-            }
-        }
-        List<Trainee> allTrainees = traineeRepository.findAllById(allTraineeIds);
-        Map<Long, Trainee> traineeMap = allTrainees.stream()
-            .collect(Collectors.toMap(Trainee::getId, Function.identity()));
-
-        // Create matches for each pairing and store swiss_round_number
+        Map<Long, Trainee> traineeMap = traineesByIds(tournamentTrainees);
         List<MatchSummaryResponse> summaries = new ArrayList<>();
         for (Pairing pairing : pairings) {
             Match match = createMatchRecord(
                 MatchFormat.SWISS,
-                request.getRoundNumber(),
+                roundNumber,
                 LocalDate.now(),
                 pairing.whiteTraineeId(),
                 pairing.blackTraineeId()
@@ -132,7 +157,7 @@ public class MatchServiceImpl implements MatchService {
             // Store swiss_round_number in participants
             List<MatchParticipant> participants = matchParticipantRepository.findByMatchId(match.getId());
             for (MatchParticipant participant : participants) {
-                participant.setSwissRoundNumber(request.getRoundNumber());
+                participant.setSwissRoundNumber(roundNumber);
                 matchParticipantRepository.save(participant);
             }
 
@@ -140,25 +165,34 @@ public class MatchServiceImpl implements MatchService {
             summaries.add(toSummary(match, traineeMap, result));
         }
         
-        log.debug("Generated {} Swiss pairings for round {}", summaries.size(), request.getRoundNumber());
+        log.debug("Generated {} Swiss pairings for round {}", summaries.size(), roundNumber);
         return summaries;
     }
 
     @Override
     @Transactional
     public List<MatchSummaryResponse> generateRoundRobin(MatchGenerationRequest request) {
-        log.info("Generating Round Robin pairings for {} trainees, round {}", 
-            request.getTraineeIds().size(), request.getRoundNumber());
-        
         List<Trainee> trainees = fetchTrainees(request.getTraineeIds());
         List<Long> ids = trainees.stream().map(Trainee::getId).toList();
+        if (ids.isEmpty()) {
+            throw new ResourceNotFoundException("No trainees provided for round robin pairing");
+        }
+        
+        // Auto-calculate roundNumber if not provided
+        Integer requestRound = request.getRoundNumber();
+        int roundNumber = (requestRound != null && requestRound > 0)
+            ? requestRound
+            : autoCalculateNextRound(MatchFormat.ROUND_ROBIN, ids);
+        
+        log.info("Generating Round Robin pairings for {} trainees, round {}", ids.size(), roundNumber);
+        
         Map<Long, Trainee> traineeMap = traineesByIds(trainees);
 
         List<MatchSummaryResponse> summaries = new ArrayList<>();
-        for (RoundRobinGenerator.Pairing pairing : RoundRobinGenerator.generateForRound(ids, request.getRoundNumber())) {
+        for (RoundRobinGenerator.Pairing pairing : RoundRobinGenerator.generateForRound(ids, roundNumber)) {
             Match match = createMatchRecord(
                 MatchFormat.ROUND_ROBIN,
-                request.getRoundNumber(),
+                roundNumber,
                 LocalDate.now(),
                 pairing.whiteTraineeId(),
                 pairing.blackTraineeId()
@@ -178,15 +212,15 @@ public class MatchServiceImpl implements MatchService {
         
         Match match = matchRepository.findById(request.getMatchId())
             .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + request.getMatchId()));
+
+        if (!matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId()).isEmpty()) {
+            throw new ConflictException("Result already recorded for match: " + match.getId());
+        }
         
         // Validate state transition
         if (!MatchStatus.canTransitionTo(match.getStatus(), MatchStatus.COMPLETED)) {
             throw new ConflictException("Cannot record result: match status " + match.getStatus() + 
                 " cannot transition to COMPLETED");
-        }
-        
-        if (!matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId()).isEmpty()) {
-            throw new ConflictException("Result already recorded for match: " + match.getId());
         }
 
         validateStrictChessScores(request.getWhiteScore(), request.getBlackScore());
@@ -252,6 +286,36 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
+    @Transactional
+    public MatchSummaryResponse rollbackMatch(Long matchId) {
+        Match match = matchRepository.findById(matchId)
+            .orElseThrow(() -> new ResourceNotFoundException("Match not found: " + matchId));
+
+        List<MatchResult> results = matchResultRepository.findByMatchIdOrderByPlayedAtDesc(matchId);
+        boolean hadResult = !results.isEmpty();
+        MatchStatus targetStatus = hadResult ? MatchStatus.SCHEDULED : MatchStatus.CANCELLED;
+
+        if (!MatchStatus.canTransitionTo(match.getStatus(), targetStatus)) {
+            throw new ConflictException("Cannot rollback match status " + match.getStatus() + " to " + targetStatus);
+        }
+
+        if (hadResult) {
+            matchResultRepository.delete(results.get(0));
+            ratingService.rebuildFromMatchHistory();
+        }
+
+        match.setStatus(targetStatus);
+        Match savedMatch = matchRepository.save(match);
+
+        List<MatchParticipant> participants = matchParticipantRepository.findByMatchIdOrderByBoardNumberAsc(savedMatch.getId());
+        Map<Long, Trainee> traineeMap = traineeRepository.findAllById(
+            participants.stream().map(participant -> participant.getTrainee().getId()).toList()
+        ).stream().collect(Collectors.toMap(Trainee::getId, Function.identity()));
+
+        return toSummary(savedMatch, traineeMap, hadResult ? "ROLLED_BACK" : "CANCELLED");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<MatchSummaryResponse> getHistoryByTrainee(Long traineeId) {
         log.debug("Retrieving match history for trainee: {}", traineeId);
@@ -263,6 +327,7 @@ public class MatchServiceImpl implements MatchService {
             summary.setMatchId(result.getMatch().getId());
             summary.setScheduledDate(result.getMatch().getScheduledDate());
             summary.setFormat(result.getMatch().getFormat().name());
+            summary.setStatus(result.getMatch().getStatus().name());
             summary.setWhitePlayer(result.getWhiteTrainee().getName());
             summary.setBlackPlayer(result.getBlackTrainee().getName());
             summary.setResult(result.getResultType().name());
@@ -314,11 +379,19 @@ public class MatchServiceImpl implements MatchService {
     }
 
     private List<Trainee> fetchTrainees(List<Long> ids) {
-        List<Trainee> trainees = traineeRepository.findAllById(ids);
-        if (trainees.size() != ids.size()) {
+        List<Long> normalizedIds = normalizeTraineeIds(ids);
+        if (normalizedIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Trainee> traineesById = traineeRepository.findAllById(normalizedIds).stream()
+            .collect(Collectors.toMap(Trainee::getId, Function.identity()));
+        if (traineesById.size() != normalizedIds.size()) {
             throw new ResourceNotFoundException("One or more trainees not found");
         }
-        return trainees;
+        return normalizedIds.stream()
+            .map(traineesById::get)
+            .toList();
     }
 
     private Map<Long, Trainee> traineesByIds(List<Trainee> trainees) {
@@ -332,6 +405,7 @@ public class MatchServiceImpl implements MatchService {
         response.setScheduledDate(match.getScheduledDate());
         response.setFormat(match.getFormat().name());
         response.setRoundNumber(match.getRoundNumber());
+        response.setStatus(match.getStatus().name());
         if (!participants.isEmpty()) {
             MatchParticipant white = participants.stream()
                 .filter(p -> p.getPieceColor() == PieceColor.WHITE)
@@ -360,6 +434,14 @@ public class MatchServiceImpl implements MatchService {
         return response;
     }
 
+    private String resolveStoredResult(Match match) {
+        List<MatchResult> results = matchResultRepository.findByMatchIdOrderByPlayedAtDesc(match.getId());
+        if (!results.isEmpty()) {
+            return results.get(0).getResultType().name();
+        }
+        return match.getStatus() == MatchStatus.CANCELLED ? MatchStatus.CANCELLED.name() : null;
+    }
+
     private MatchResultType resolveResultType(double whiteScore, double blackScore) {
         if (whiteScore > blackScore) {
             return MatchResultType.WHITE_WIN;
@@ -377,6 +459,49 @@ public class MatchServiceImpl implements MatchService {
         if (!whiteWin && !blackWin && !draw) {
             throw new IllegalArgumentException("Score must be one of: 1-0, 0-1, or 0.5-0.5");
         }
+    }
+
+    private int autoCalculateNextRound(MatchFormat format, List<Long> traineeIds) {
+        Integer maxExistingRound = traineeIds == null || traineeIds.isEmpty()
+            ? matchRepository.findMaxRoundNumberByFormat(format)
+            : matchRepository.findMaxRoundNumberByFormatAndTraineeIds(format, traineeIds);
+        if (maxExistingRound == null) {
+            return 1;
+        }
+        return maxExistingRound + 1;
+    }
+
+    /**
+     * Calculate the maximum rounds for Round-Robin tournament.
+     * For Round-Robin: max rounds = N - 1 (each player plays every other player once)
+     */
+    private int calculateMaxRoundRobinRounds(int participantCount) {
+        if (participantCount <= 1) {
+            return 0;
+        }
+        return participantCount - 1;
+    }
+
+    @Override
+    public int calculateMaxRoundsForFormat(String format, int participantCount) {
+        if ("SWISS".equalsIgnoreCase(format)) {
+            return swissTournamentService.calculateMaxRounds(participantCount);
+        } else if ("ROUND_ROBIN".equalsIgnoreCase(format)) {
+            return calculateMaxRoundRobinRounds(participantCount);
+        }
+        throw new IllegalArgumentException("Unknown format: " + format);
+    }
+
+    private List<Long> normalizeTraineeIds(List<Long> traineeIds) {
+        if (traineeIds == null || traineeIds.isEmpty()) {
+            return List.of();
+        }
+        return traineeIds.stream()
+            .filter(id -> id != null && id > 0)
+            .collect(Collectors.collectingAndThen(
+                Collectors.toCollection(LinkedHashSet::new),
+                ArrayList::new
+            ));
     }
 
 }

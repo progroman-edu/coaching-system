@@ -101,11 +101,14 @@ export const api = {
     },
 
     createMatch: (payload) => request("/matches", { method: "POST", body: JSON.stringify(payload) }),
+    listMatches: () => request("/matches"),
     generateSwiss: (payload) => request("/matches/generate/swiss", { method: "POST", body: JSON.stringify(payload) }),
     generateRoundRobin: (payload) => request("/matches/generate/round-robin", { method: "POST", body: JSON.stringify(payload) }),
     submitMatchResult: (payload) => request("/matches/result", { method: "POST", body: JSON.stringify(payload) }),
+    rollbackMatch: (matchId) => request(`/matches/${matchId}/rollback`, { method: "POST" }),
     getMatchHistory: (traineeId) => request(`/matches/history/${traineeId}`),
     getTraineeRatingHistory: (traineeId) => request(`/matches/history/${traineeId}/ratings`),
+    getMaxRounds: (format, participantCount) => request(`/matches/calculate-max-rounds/${encodeURIComponent(format)}/${participantCount}`),
 
     exportReport: (type, format) => {
         const params = new URLSearchParams({ type, format });

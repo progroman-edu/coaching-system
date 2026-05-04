@@ -12,11 +12,12 @@ public enum MatchStatus {
         }
         // Valid transitions:
         // SCHEDULED -> COMPLETED, CANCELLED
-        // COMPLETED -> (no further transitions allowed)
+        // COMPLETED -> SCHEDULED (rollback a bad result)
         // CANCELLED -> (no further transitions allowed)
         return switch (from) {
             case SCHEDULED -> to == COMPLETED || to == CANCELLED;
-            case COMPLETED, CANCELLED -> false;
+            case COMPLETED -> to == SCHEDULED;
+            case CANCELLED -> false;
         };
     }
 }

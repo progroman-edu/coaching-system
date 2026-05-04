@@ -2,7 +2,7 @@
 package com.chesscoach.main.service;
 
 import com.chesscoach.main.model.MatchResult;
-import com.chesscoach.main.model.MatchResultType;
+
 import java.util.List;
 
 public interface SwissScorer {

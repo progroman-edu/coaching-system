@@ -19,7 +19,7 @@ public class RateLimitingConfig implements WebMvcConfigurer {
     }
 
     public static class RateLimitInterceptor implements org.springframework.web.servlet.HandlerInterceptor {
-        private final Bucket bucket = Bucket4j.builder()
+        private static final Bucket bucket = Bucket4j.builder()
             .addLimit(Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1))))
             .build();
 

@@ -3,9 +3,7 @@ package com.chesscoach.main.service.impl;
 
 import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.MatchResultType;
-import com.chesscoach.main.model.RematachRound;
 import com.chesscoach.main.model.Trainee;
-import com.chesscoach.main.repository.RematachRoundRepository;
 import com.chesscoach.main.service.SwissScorer;
 import com.chesscoach.main.service.SwissTiebreaker;
 import org.slf4j.Logger;
@@ -13,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +21,9 @@ public class SwissTiebreakerImpl implements SwissTiebreaker {
     private static final Logger log = LoggerFactory.getLogger(SwissTiebreakerImpl.class);
 
     private final SwissScorer swissScorer;
-    private final RematachRoundRepository rematachRoundRepository;
 
-    public SwissTiebreakerImpl(SwissScorer swissScorer, RematachRoundRepository rematachRoundRepository) {
+    public SwissTiebreakerImpl(SwissScorer swissScorer) {
         this.swissScorer = swissScorer;
-        this.rematachRoundRepository = rematachRoundRepository;
     }
 
     @Override

@@ -9,11 +9,12 @@ public interface SwissTournamentService {
     /**
      * Generate Swiss pairings for the next round.
      * 
+     * @param traineeIds participant scope for the tournament; when empty, all active trainees are used
      * @param roundNumber the round number to generate (must be >= current max round + 1)
      * @return list of pairings with white/black assignments
      * @throws IllegalArgumentException if round number is invalid
      */
-    List<Pairing> generateNextRound(int roundNumber);
+    List<Pairing> generateNextRound(List<Long> traineeIds, int roundNumber);
 
     /**
      * Finalize a round after all results are recorded.
@@ -35,6 +36,16 @@ public interface SwissTournamentService {
      * @return ranked list of trainees with scores
      */
     List<StandingRow> getStandings(int roundNumber);
+
+    /**
+     * Calculate the maximum recommended rounds for a Swiss tournament.
+     * Formula: ceil(log2(participantCount)) ensures enough rounds to differentiate players.
+     * Minimum of 2 rounds recommended.
+     * 
+     * @param participantCount the number of participants
+     * @return maximum recommended rounds
+     */
+    int calculateMaxRounds(int participantCount);
 
     /**
      * DTO for standings display.

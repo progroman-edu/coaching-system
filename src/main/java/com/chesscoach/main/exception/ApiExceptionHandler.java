@@ -49,8 +49,10 @@ public class ApiExceptionHandler {
             .stream()
             .map(error -> {
                 String field = error instanceof FieldError fieldError ? fieldError.getField() : "request";
-                String message = String.format("%s: %s (Expected: %s)", 
-                    field, error.getDefaultMessage(), error.getObjectName());
+                String defaultMessageStr = error.getDefaultMessage();
+                String defaultMsg = defaultMessageStr != null ? defaultMessageStr : "validation failed";
+                String objName = error.getObjectName() != null ? error.getObjectName() : "object";
+                String message = String.format("%s: %s (Expected: %s)", field, defaultMsg, objName);
                 return new ApiError("VALIDATION_ERROR", message);
             })
             .toList();

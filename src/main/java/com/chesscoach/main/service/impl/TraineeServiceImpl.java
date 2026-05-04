@@ -27,6 +27,7 @@ import com.chesscoach.main.service.TraineeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -330,9 +331,11 @@ public class TraineeServiceImpl implements TraineeService {
         traineeRepository.saveAll(trainees);
     }
 
+    @SuppressWarnings("UnboxingNullableValue")
     private int getRapidCurrentRating(Trainee trainee) {
         RapidRating rapid = trainee.getRapidRating();
-        return rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
+        Integer current = rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
+        return current != null ? current : defaultRating;
     }
 
     private void resetAutoIncrementIfNoTrainees() {
@@ -341,11 +344,12 @@ public class TraineeServiceImpl implements TraineeService {
         }
         try {
             jdbcTemplate.execute("ALTER TABLE trainees AUTO_INCREMENT = 1");
-        } catch (Exception ex) {
+        } catch (DataAccessException ex) {
             log.debug("Could not reset trainees AUTO_INCREMENT on current database engine: {}", ex.getMessage());
         }
     }
 
+    @SuppressWarnings("UnboxingNullableValue")
     private TraineeResponse toResponse(Trainee trainee) {
         TraineeResponse response = new TraineeResponse();
         response.setId(trainee.getId());
@@ -360,12 +364,18 @@ public class TraineeServiceImpl implements TraineeService {
         BulletRating bullet = trainee.getBulletRating();
         RapidRating rapid = trainee.getRapidRating();
         
-        response.setBlitzCurrentRating(blitz != null && blitz.getCurrentRating() != null ? blitz.getCurrentRating() : defaultRating);
-        response.setBlitzHighestRating(blitz != null && blitz.getHighestRating() != null ? blitz.getHighestRating() : defaultRating);
-        response.setBulletCurrentRating(bullet != null && bullet.getCurrentRating() != null ? bullet.getCurrentRating() : defaultRating);
-        response.setBulletHighestRating(bullet != null && bullet.getHighestRating() != null ? bullet.getHighestRating() : defaultRating);
-        response.setRapidCurrentRating(rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating);
-        response.setRapidHighestRating(rapid != null && rapid.getHighestRating() != null ? rapid.getHighestRating() : defaultRating);
+        Integer blitzCurrent = blitz != null && blitz.getCurrentRating() != null ? blitz.getCurrentRating() : defaultRating;
+        Integer blitzHighest = blitz != null && blitz.getHighestRating() != null ? blitz.getHighestRating() : defaultRating;
+        Integer bulletCurrent = bullet != null && bullet.getCurrentRating() != null ? bullet.getCurrentRating() : defaultRating;
+        Integer bulletHighest = bullet != null && bullet.getHighestRating() != null ? bullet.getHighestRating() : defaultRating;
+        Integer rapidCurrent = rapid != null && rapid.getCurrentRating() != null ? rapid.getCurrentRating() : defaultRating;
+        Integer rapidHighest = rapid != null && rapid.getHighestRating() != null ? rapid.getHighestRating() : defaultRating;
+        response.setBlitzCurrentRating(blitzCurrent);
+        response.setBlitzHighestRating(blitzHighest);
+        response.setBulletCurrentRating(bulletCurrent);
+        response.setBulletHighestRating(bulletHighest);
+        response.setRapidCurrentRating(rapidCurrent);
+        response.setRapidHighestRating(rapidHighest);
         
         response.setLatestRatingChange(findLatestRatingChange(trainee.getId()));
         response.setAttendancePercentageLast30Days(computeAttendancePercentageLast30Days(trainee.getId()));

@@ -21,7 +21,6 @@
         <a class="nav-link" href="/register.html">Register</a>
         <a class="nav-link" href="/leaderboard.html">Leaderboard</a>
         <a class="nav-link" href="/matches.html">Tournament</a>
-        <a class="nav-link active" href="/bracket.html">Bracket</a>
         <a class="nav-link" href="/match-history.html">Match History</a>
         <a class="nav-link" href="/attendance.html">Attendance</a>
         <a class="nav-link" href="/reports.html">Reports</a>
@@ -31,15 +30,16 @@
         
         <div class="panel">
             <h1 class="title">Tournament Bracket</h1>
+            <p class="subtitle">Projected rounds, board results, and final standings.</p>
         </div>
 
         <section class="panel">
             <div class="bracket-selector">
-                <label>Select Tournament (Match)</label>
+                <label>Select Tournament</label>
                 <select id="matchSelect" required>
                     <option value="">Loading tournaments...</option>
                 </select>
-                <button id="loadBracketBtn" class="secondary" type="button">Load Bracket</button>
+                <button id="loadBracketBtn" class="secondary" type="button">Load</button>
                 <button id="refreshBtn" class="secondary" type="button">Refresh</button>
             </div>
         </section>
@@ -52,12 +52,12 @@
                 </div>
             </div>
             <div id="noBracketMsg" class="info-box">
-                Select a tournament above to view the bracket.
+                Generate matches to view projected rounds and results.
             </div>
         </section>
 
         <section class="panel">
-            <h3>Match Details</h3>
+            <h3>Tournament Overview</h3>
             <div id="matchDetailsContainer" style="display:none;">
                 <div class="match-details-grid">
                     <div>
@@ -77,19 +77,6 @@
                         <span id="detailTotalRounds">-</span>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <section class="panel">
-            <h3>Instructions</h3>
-            <div class="info-box">
-                <ul>
-                    <li><strong>Double-click a player</strong> to select them as the winner of the match</li>
-                    <li><strong>Green bars</strong> indicate qualified (advancing) players</li>
-                    <li><strong>Red bars</strong> indicate eliminated players</li>
-                    <li><strong>Orange bars</strong> indicate active/current round matches</li>
-                    <li><strong>Blue bars</strong> indicate pending matches (not yet played)</li>
-                </ul>
             </div>
         </section>
     </main>

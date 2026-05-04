@@ -5,15 +5,16 @@ import com.chesscoach.main.model.MatchFormat;
 import com.chesscoach.main.model.MatchParticipant;
 import com.chesscoach.main.model.MatchResult;
 import com.chesscoach.main.model.MatchResultType;
+import com.chesscoach.main.model.RapidRating;
 import com.chesscoach.main.model.RematachRound;
 import com.chesscoach.main.model.Trainee;
 import com.chesscoach.main.repository.MatchParticipantRepository;
 import com.chesscoach.main.repository.MatchRepository;
-import com.chesscoach.main.repository.MatchResultRepository;
 import com.chesscoach.main.repository.RematachRoundRepository;
 import com.chesscoach.main.repository.TraineeRepository;
 import com.chesscoach.main.service.SwissScorer;
 import com.chesscoach.main.service.SwissTiebreaker;
+import com.chesscoach.main.util.SwissPairingGenerator.Pairing;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,8 +27,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,8 +42,6 @@ class SwissTournamentServiceImplTest {
     private MatchRepository matchRepository;
     @Mock
     private MatchParticipantRepository matchParticipantRepository;
-    @Mock
-    private MatchResultRepository matchResultRepository;
     @Mock
     private TraineeRepository traineeRepository;
     @Mock
@@ -53,9 +55,52 @@ class SwissTournamentServiceImplTest {
     private SwissTournamentServiceImpl swissTournamentService;
 
     @Test
+    void generateNextRoundUsesScopedParticipants() {
+        Trainee trainee1 = trainee(1L, "Alice", 1500);
+        Trainee trainee2 = trainee(2L, "Bob", 1400);
+
+        when(matchRepository.findMaxRoundNumberByFormatAndTraineeIds(MatchFormat.SWISS, List.of(1L, 2L))).thenReturn(0);
+        when(traineeRepository.findAllByIdInWithRatingsOrderedByRating(List.of(1L, 2L)))
+            .thenReturn(List.of(trainee1, trainee2));
+        when(swissScorer.getPlayerMatchResultsUpToRound(1L, 0)).thenReturn(List.of());
+        when(swissScorer.getPlayerMatchResultsUpToRound(2L, 0)).thenReturn(List.of());
+        when(matchParticipantRepository.existsByTraineeIdAndSwissRoundNumberIsNotNullAndByeTrue(1L)).thenReturn(false);
+        when(matchParticipantRepository.existsByTraineeIdAndSwissRoundNumberIsNotNullAndByeTrue(2L)).thenReturn(false);
+
+        List<Pairing> pairings = swissTournamentService.generateNextRound(List.of(1L, 2L), 1);
+
+        assertThat(pairings).containsExactly(new Pairing(1L, 2L));
+        verify(matchRepository).findMaxRoundNumberByFormatAndTraineeIds(MatchFormat.SWISS, List.of(1L, 2L));
+        verify(traineeRepository).findAllByIdInWithRatingsOrderedByRating(List.of(1L, 2L));
+        verify(matchRepository, never()).findMaxRoundNumberByFormat(MatchFormat.SWISS);
+        verify(traineeRepository, never()).findAllWithRatingsOrderedByRating();
+    }
+
+    @Test
+    void generateNextRoundAdvancesSkippedScopedRound() {
+        Trainee trainee1 = trainee(1L, "Alice", 1500);
+        Trainee trainee2 = trainee(2L, "Bob", 1400);
+
+        when(matchRepository.findMaxRoundNumberByFormatAndTraineeIds(MatchFormat.SWISS, List.of(1L, 2L))).thenReturn(2);
+        when(traineeRepository.findAllByIdInWithRatingsOrderedByRating(List.of(1L, 2L)))
+            .thenReturn(List.of(trainee1, trainee2));
+        when(swissScorer.getPlayerMatchResultsUpToRound(1L, 2)).thenReturn(List.of());
+        when(swissScorer.getPlayerMatchResultsUpToRound(2L, 2)).thenReturn(List.of());
+        when(matchParticipantRepository.existsByTraineeIdAndSwissRoundNumberIsNotNullAndByeTrue(1L)).thenReturn(false);
+        when(matchParticipantRepository.existsByTraineeIdAndSwissRoundNumberIsNotNullAndByeTrue(2L)).thenReturn(false);
+
+        List<Pairing> pairings = swissTournamentService.generateNextRound(List.of(1L, 2L), 4);
+
+        assertThat(pairings).containsExactly(new Pairing(1L, 2L));
+        verify(swissScorer).getPlayerMatchResultsUpToRound(1L, 2);
+        verify(swissScorer).getPlayerMatchResultsUpToRound(2L, 2);
+        verify(traineeRepository).findAllByIdInWithRatingsOrderedByRating(List.of(1L, 2L));
+    }
+
+    @Test
     void finalizeRoundCreatesScheduledRematchMatchAndRecord() {
-        Trainee trainee1 = trainee(1L, "Alice");
-        Trainee trainee2 = trainee(2L, "Bob");
+        Trainee trainee1 = trainee(1L, "Alice", null);
+        Trainee trainee2 = trainee(2L, "Bob", null);
 
         when(traineeRepository.findAll()).thenReturn(List.of(trainee1, trainee2));
         when(swissTiebreaker.rankTraineesByTiebreaker(any(), eq(3)))
@@ -103,10 +148,16 @@ class SwissTournamentServiceImplTest {
         assertThat(savedRematch.getReason()).contains("Tiebreaker rematch");
     }
 
-    private static Trainee trainee(Long id, String name) {
+    private static Trainee trainee(Long id, String name, Integer rating) {
         Trainee trainee = new Trainee();
         trainee.setId(id);
         trainee.setName(name);
+        if (rating != null) {
+            RapidRating rapidRating = new RapidRating();
+            rapidRating.setTrainee(trainee);
+            rapidRating.setCurrentRating(rating);
+            trainee.setRapidRating(rapidRating);
+        }
         return trainee;
     }
 }

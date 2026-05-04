@@ -7,6 +7,7 @@ const root = document.documentElement;
 const STATE_KEY = "sidebarOpen";
 const THEME_KEY = "themeMode";
 const DELETE_KEY = "allowPlayerDeletion";
+const EDIT_RESULTS_KEY = "allowMatchResultEditing";
 
 const NAV_ICON_MAP = {
     "/index.html": "/icons/dsahboard.png",
@@ -14,7 +15,6 @@ const NAV_ICON_MAP = {
     "/register.html": "/icons/register.png",
     "/leaderboard.html": "/icons/leaderboard.png",
     "/matches.html": "/icons/tournament.png",
-    "/bracket.html": "/icons/tournament.png",
     "/match-history.html": "/icons/history.png",
     "/attendance.html": "/icons/attendance.png",
     "/reports.html": "/icons/report.png"
@@ -32,6 +32,10 @@ function getDeleteSetting() {
     return localStorage.getItem(DELETE_KEY) === "1";
 }
 
+function getEditResultsSetting() {
+    return localStorage.getItem(EDIT_RESULTS_KEY) === "1";
+}
+
 function applyTheme(theme) {
     root.setAttribute("data-theme", theme);
     root.style.colorScheme = theme;
@@ -41,7 +45,8 @@ function notifySettingsChange() {
     window.dispatchEvent(new CustomEvent("app:settings-changed", {
         detail: {
             theme: root.getAttribute("data-theme") === "dark" ? "dark" : "light",
-            deleteEnabled: getDeleteSetting()
+            deleteEnabled: getDeleteSetting(),
+            editResultsEnabled: getEditResultsSetting()
         }
     }));
 }
@@ -91,6 +96,16 @@ function ensureSettingsFooter() {
                 </div>
                 <div class="sidebar-setting-row">
                     <div class="sidebar-setting-copy">
+                        <strong>Edit Match Results</strong>
+                        <span>Allow recorded tournament results to be updated.</span>
+                    </div>
+                    <label class="setting-switch">
+                        <input id="editMatchResultToggle" type="checkbox" aria-label="Enable match result editing">
+                        <span class="setting-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="sidebar-setting-row">
+                    <div class="sidebar-setting-copy">
                         <strong>Theme</strong>
                         <span>Switch the workspace appearance.</span>
                     </div>
@@ -109,11 +124,15 @@ function ensureSettingsFooter() {
 function syncSettingsUI() {
     const theme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
     const deleteToggle = document.getElementById("deletePlayerToggle");
+    const editResultToggle = document.getElementById("editMatchResultToggle");
     const themeLightBtn = document.getElementById("themeLightBtn");
     const themeDarkBtn = document.getElementById("themeDarkBtn");
 
     if (deleteToggle) {
         deleteToggle.checked = getDeleteSetting();
+    }
+    if (editResultToggle) {
+        editResultToggle.checked = getEditResultsSetting();
     }
     if (themeLightBtn) {
         themeLightBtn.classList.toggle("active", theme === "light");
@@ -125,11 +144,17 @@ function syncSettingsUI() {
 
 function bindSettingsFooter() {
     const deleteToggle = document.getElementById("deletePlayerToggle");
+    const editResultToggle = document.getElementById("editMatchResultToggle");
     const themeLightBtn = document.getElementById("themeLightBtn");
     const themeDarkBtn = document.getElementById("themeDarkBtn");
 
     deleteToggle?.addEventListener("change", () => {
         localStorage.setItem(DELETE_KEY, deleteToggle.checked ? "1" : "0");
+        notifySettingsChange();
+    });
+
+    editResultToggle?.addEventListener("change", () => {
+        localStorage.setItem(EDIT_RESULTS_KEY, editResultToggle.checked ? "1" : "0");
         notifySettingsChange();
     });
 

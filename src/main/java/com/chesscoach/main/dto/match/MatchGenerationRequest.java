@@ -2,7 +2,6 @@
 package com.chesscoach.main.dto.match;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,13 +14,16 @@ public class MatchGenerationRequest {
     /**
      * List of trainee IDs to include in pairings.
      * - For Round Robin: specifies which trainees to pair
-     * - For Swiss: ignored (all trainees are automatically included)
+     * - For Swiss: when provided, scopes round tracking and pairings to these trainees
      */
     private List<Long> traineeIds;
 
-    @NotNull
-    @Min(1)
+    /**
+     * Round number to generate.
+     * Optional: if null or 0, the system will auto-calculate the maximum recommended rounds.
+     * If provided explicitly, must be >= 1.
+     */
+    @Min(value = 0, message = "roundNumber must be null or >= 1")
     private Integer roundNumber;
 
 }
-

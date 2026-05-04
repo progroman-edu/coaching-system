@@ -17,6 +17,7 @@ const pairSelectedCount = document.getElementById("pairSelectedCount");
 const historySelectedLabel = document.getElementById("historySelectedLabel");
 const resultMatchSelect = resultForm?.querySelector('select[name="matchRef"]');
 const resultTypeSelect = resultForm?.querySelector('select[name="resultType"]');
+const EDIT_RESULTS_KEY = "allowMatchResultEditing";
 const swissBracket = document.getElementById("swissBracket");
 const scheduleDateInput = scheduleForm?.querySelector('input[name="scheduledDate"]');
 const historyModeButtons = document.querySelectorAll("#historyModeTabs [data-history-mode]");
@@ -25,6 +26,8 @@ const scheduleSelectedIds = new Set();
 const pairSelectedIds = new Set();
 const traineesById = new Map();
 const offlineMatchesByRef = new Map();
+const PAIRING_FORM_STATE_KEY = "tournamentPairingFormState";
+const SWISS_PAIRINGS_CACHE_KEY = "latestSwissPairings";
 let latestSwissPairings = [];
 
 function parseIds(idsText) {
@@ -65,7 +68,7 @@ async function withLoading(task) {
     }
 }
 
-function shortDate(value) {
+function readSessionJson(key, fallback) {
     const text = String(value ?? "");
     const parts = text.split("-");
     if (parts.length !== 3) return text;
@@ -153,14 +156,84 @@ function initScheduleDateInput() {
     }
 }
 
+function savePairingFormState() {
+    if (!pairForm) return;
+    const format = pairForm.querySelector('select[name="format"]')?.value ?? "SWISS";
+    const roundNumber = pairForm.querySelector('input[name="roundNumber"]')?.value ?? "0";
+    writeSessionJson(PAIRING_FORM_STATE_KEY, {
+        format,
+        roundNumber,
+        traineeIds: [...pairSelectedIds]
+    });
+}
+
+function restorePairingFormState() {
+    if (!pairForm) return;
+    const state = readSessionJson(PAIRING_FORM_STATE_KEY, null);
+    if (!state) return;
+
+    const formatSelect = pairForm.querySelector('select[name="format"]');
+    const format = String(state.format ?? "").trim();
+    if (formatSelect && Array.from(formatSelect.options).some((option) => option.value === format || option.textContent === format)) {
+        formatSelect.value = format;
+    }
+
+    const roundInput = pairForm.querySelector('input[name="roundNumber"]');
+    const roundNumber = Number(state.roundNumber);
+    if (roundInput && Number.isFinite(roundNumber) && roundNumber >= 0) {
+        roundInput.value = String(roundNumber);
+    }
+
+    pairSelectedIds.clear();
+    if (Array.isArray(state.traineeIds)) {
+        state.traineeIds
+            .map((id) => Number(id))
+            .filter((id) => Number.isFinite(id) && id > 0)
+            .forEach((id) => pairSelectedIds.add(id));
+    }
+}
+
+function syncParticipantCards(container, selectedIds) {
+    container?.querySelectorAll("[data-participant-id]").forEach((card) => {
+        const id = Number(card.dataset.participantId);
+        const selected = Number.isFinite(id) && selectedIds.has(id);
+        card.classList.toggle("selected", selected);
+        card.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+}
+
+function saveLatestSwissPairings() {
+    writeSessionJson(SWISS_PAIRINGS_CACHE_KEY, latestSwissPairings);
+}
+
+function restoreLatestSwissPairings() {
+    const cached = readSessionJson(SWISS_PAIRINGS_CACHE_KEY, []);
+    latestSwissPairings = Array.isArray(cached) ? cached : [];
+}
+
+function notifyTournamentGenerated(format, matches) {
+    window.dispatchEvent(new CustomEvent("app:tournament-generated", {
+        detail: {
+            format,
+            matches: Array.isArray(matches) ? matches : []
+        }
+    }));
+}
+
 function refreshResultMatchOptions() {
     if (!resultMatchSelect) return;
     const options = ['<option value="">Select a loaded F2F match</option>'];
     for (const [key, entry] of offlineMatchesByRef.entries()) {
+        if (!canSubmitResult(entry?.match)) {
+            continue;
+        }
         const label = `${entry.displayRef} | ${entry.match.result ?? "PENDING"}`;
         options.push(`<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`);
     }
     resultMatchSelect.innerHTML = options.join("");
+    const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
+    if (hiddenIdInput) hiddenIdInput.value = "";
+    if (resultTypeSelect) resultTypeSelect.value = "";
 }
 
 function findOfflineMatchEntryById(matchId) {
@@ -177,12 +250,14 @@ function updateCachedResult(matchId, resultText) {
     const hit = findOfflineMatchEntryById(matchId);
     if (hit?.entry?.match) {
         hit.entry.match.result = result;
+        hit.entry.match.status = "COMPLETED";
     }
     latestSwissPairings = latestSwissPairings.map((pairing) => (
         Number(pairing?.matchId) === Number(matchId)
-            ? { ...pairing, result }
+            ? { ...pairing, result, status: "COMPLETED" }
             : pairing
     ));
+    saveLatestSwissPairings();
 }
 
 function resultDisplayText(resultText) {
@@ -202,6 +277,47 @@ function resultChipClass(resultText) {
     return "";
 }
 
+function getEditResultsSetting() {
+    return localStorage.getItem(EDIT_RESULTS_KEY) === "1";
+}
+
+function normalizeResultType(resultType) {
+    const value = String(resultType ?? "").trim().toUpperCase();
+    if (value === "WHITE_WIN" || value === "1-0") return "WHITE_WIN";
+    if (value === "BLACK_WIN" || value === "0-1") return "BLACK_WIN";
+    if (value === "DRAW" || value === "0.5-0.5" || value === "1/2-1/2") return "DRAW";
+    return "";
+}
+
+function scoresForResultType(resultType) {
+    if (resultType === "WHITE_WIN") {
+        return { whiteScore: 1.0, blackScore: 0.0 };
+    }
+    if (resultType === "BLACK_WIN") {
+        return { whiteScore: 0.0, blackScore: 1.0 };
+    }
+    if (resultType === "DRAW") {
+        return { whiteScore: 0.5, blackScore: 0.5 };
+    }
+    return null;
+}
+
+function isByeMatch(match) {
+    const blackName = String(match?.blackPlayer ?? "").trim().toUpperCase();
+    return String(match?.result ?? "").trim().toUpperCase() === "BYE" || blackName === "BYE";
+}
+
+function isResultRecorded(match) {
+    return Boolean(winnerSide(match?.result)) || String(match?.status ?? "").trim().toUpperCase() === "COMPLETED";
+}
+
+function canSubmitResult(match) {
+    if (!match) return false;
+    if (isByeMatch(match)) return false;
+    if (isResultRecorded(match)) return false;
+    return String(match?.status ?? "").trim().toUpperCase() === "SCHEDULED";
+}
+
 function renderSwissBracket() {
     if (!swissBracket) return;
     if (!latestSwissPairings.length) {
@@ -210,6 +326,7 @@ function renderSwissBracket() {
         return;
     }
     swissBracket.classList.remove("empty");
+    const allowEdit = getEditResultsSetting();
     const roundLabel = latestSwissPairings[0]?.roundNumber ? `Round ${latestSwissPairings[0].roundNumber}` : "Swiss Pairings";
     const cards = latestSwissPairings.map((match, index) => {
         const winner = winnerSide(match?.result);
@@ -217,6 +334,8 @@ function renderSwissBracket() {
         const blackClass = winner === "draw" ? "draw" : (winner === "black" ? "black-win" : (winner === "white" ? "black-loss" : ""));
         const blackName = String(match?.blackPlayer ?? "").trim();
         const bye = !blackName || blackName.toUpperCase() === "BYE";
+        const editMode = allowEdit && isResultRecorded(match);
+        const locked = !canSubmitResult(match) && !editMode;
         return `
             <article class="swiss-match-card">
                 <div class="swiss-match-head">
@@ -228,14 +347,19 @@ function renderSwissBracket() {
                     class="swiss-player ${whiteClass}"
                     data-match-id="${escapeHtml(match?.matchId ?? "")}"
                     data-player-side="white"
-                    ${bye ? "disabled" : ""}>${escapeHtml(match?.whitePlayer ?? "-")}</button>
+                    ${bye || locked ? "disabled" : ""}>${escapeHtml(match?.whitePlayer ?? "-")}</button>
                 <div class="swiss-vs">VS</div>
                 <button
                     type="button"
                     class="swiss-player ${bye ? "bye" : blackClass}"
                     data-match-id="${escapeHtml(match?.matchId ?? "")}"
                     data-player-side="black"
-                    ${bye ? "disabled" : ""}>${escapeHtml(bye ? "BYE" : blackName)}</button>
+                    ${bye || locked ? "disabled" : ""}>${escapeHtml(bye ? "BYE" : blackName)}</button>
+                ${editMode ? `
+                <div class="swiss-match-actions">
+                    <button type="button" class="secondary" data-edit-match-id="${escapeHtml(match?.matchId ?? "")}">Edit result</button>
+                </div>
+                ` : ""}
             </article>
         `;
     }).join("");
@@ -247,42 +371,88 @@ function renderSwissBracket() {
     `;
 }
 
-async function submitBracketWinner(matchId, winner) {
+async function recordBracketResult(matchId, resultType, options = {}) {
+    const allowEdit = Boolean(options.allowEdit);
     if (!Number.isFinite(matchId) || matchId <= 0) return;
     const found = latestSwissPairings.find((match) => Number(match?.matchId) === Number(matchId));
     if (!found) {
         showMessage(msg, "Select a valid loaded match first.", false);
         return;
     }
-    if (String(found?.result ?? "").toUpperCase() === "BYE" || String(found?.blackPlayer ?? "").toUpperCase() === "BYE") {
+    if (isByeMatch(found)) {
         showMessage(msg, "This pairing is a bye and does not require a result.", false);
         return;
     }
-    if (winnerSide(found?.result)) {
+    const normalizedResult = normalizeResultType(resultType);
+    if (!normalizedResult) {
+        showMessage(msg, "Select a valid result.", false);
+        return;
+    }
+
+    const currentResult = normalizeResultType(found?.result);
+    const resultRecorded = isResultRecorded(found);
+    if (resultRecorded && currentResult === normalizedResult) {
         showMessage(msg, "Result already recorded for this pairing.", false);
         return;
     }
-    const payload = {
-        matchId,
-        whiteScore: winner === "white" ? 1.0 : 0.0,
-        blackScore: winner === "black" ? 1.0 : 0.0
-    };
+    if (resultRecorded && !allowEdit) {
+        showMessage(msg, "Enable Edit Match Results in Settings to change a recorded result.", false);
+        return;
+    }
+
+    const scorePayload = scoresForResultType(normalizedResult);
+    if (!scorePayload) {
+        showMessage(msg, "Select a valid result.", false);
+        return;
+    }
+
+    const payload = { matchId, ...scorePayload };
     try {
-        await withLoading(() => api.submitMatchResult(payload));
-        updateCachedResult(matchId, winner === "white" ? "WHITE_WIN" : "BLACK_WIN");
+        await withLoading(async () => {
+            if (resultRecorded && allowEdit) {
+                await api.rollbackMatch(matchId);
+                latestSwissPairings = latestSwissPairings.map((pairing) => (
+                    Number(pairing?.matchId) === Number(matchId)
+                        ? { ...pairing, result: "", status: "SCHEDULED" }
+                        : pairing
+                ));
+                renderSwissBracket();
+            }
+            await api.submitMatchResult(payload);
+        });
+        updateCachedResult(matchId, normalizedResult);
         refreshResultMatchOptions();
         renderSwissBracket();
-        const selected = findOfflineMatchEntryById(matchId);
-        if (resultMatchSelect && selected) {
-            resultMatchSelect.value = selected.key;
-        }
-        const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
-        if (hiddenIdInput) hiddenIdInput.value = String(matchId);
-        if (resultTypeSelect) resultTypeSelect.value = winner === "white" ? "WHITE_WIN" : "BLACK_WIN";
-        showMessage(msg, "Match result recorded.");
+        showMessage(msg, resultRecorded && allowEdit ? "Match result updated." : "Match result recorded.");
     } catch (err) {
         showMessage(msg, err.message, false);
+        renderSwissBracket();
     }
+}
+
+function promptEditBracketResult(matchId) {
+    const found = latestSwissPairings.find((match) => Number(match?.matchId) === Number(matchId));
+    if (!found) {
+        showMessage(msg, "Select a valid loaded match first.", false);
+        return;
+    }
+    if (!isResultRecorded(found)) {
+        showMessage(msg, "Only recorded results can be edited from this control.", false);
+        return;
+    }
+
+    const currentResult = normalizeResultType(found?.result) || "WHITE_WIN";
+    const nextResult = window.prompt("Enter new result (WHITE_WIN, BLACK_WIN, DRAW)", currentResult);
+    if (nextResult === null) {
+        return;
+    }
+    const normalizedResult = normalizeResultType(nextResult);
+    if (!normalizedResult) {
+        showMessage(msg, "Enter WHITE_WIN, BLACK_WIN, or DRAW.", false);
+        return;
+    }
+
+    void recordBracketResult(matchId, normalizedResult, { allowEdit: true });
 }
 
 function syncSelectedIds(form, selectedIds, countEl) {
@@ -309,6 +479,11 @@ function bindParticipantPicker(container, form, selectedIds, countEl) {
             card.setAttribute("aria-pressed", "true");
         }
         syncSelectedIds(form, selectedIds, countEl);
+        // Update max rounds when participant selection changes
+        if (form === pairForm) {
+            savePairingFormState();
+            updateMaxRoundsDisplay();
+        }
     });
 }
 
@@ -340,6 +515,7 @@ async function loadParticipantProfiles() {
     if (!scheduleProfiles && !pairProfiles && !historyProfiles) return;
     try {
         const trainees = await withLoading(() => api.listTrainees({ page: 0, size: 500 }));
+        restorePairingFormState();
         traineesById.clear();
         trainees.forEach((t) => traineesById.set(Number(t.id), t));
         const cardHtml = trainees.map((t) => `
@@ -355,15 +531,18 @@ async function loadParticipantProfiles() {
         if (scheduleProfiles) scheduleProfiles.innerHTML = cardHtml || "<div>No trainees found.</div>";
         if (pairProfiles) pairProfiles.innerHTML = cardHtml || "<div>No trainees found.</div>";
         if (historyProfiles) historyProfiles.innerHTML = cardHtml || "<div>No trainees found.</div>";
+        syncParticipantCards(pairProfiles, pairSelectedIds);
         syncSelectedIds(scheduleForm, scheduleSelectedIds, scheduleSelectedCount);
         syncSelectedIds(pairForm, pairSelectedIds, pairSelectedCount);
         if (historySelectedLabel) historySelectedLabel.textContent = "Selected: none";
+        updateMaxRoundsDisplay();
     } catch (err) {
         showMessage(msg, err.message, false);
     }
 }
 
 function renderMatches(data, filters = {}) {
+    offlineMatchesByRef.clear();
     const filterDate = String(filters.dateFilter ?? "").trim();
     const filterFormat = String(filters.formatFilter ?? "ALL").toUpperCase();
     const normalized = data.map((m) => ({
@@ -503,6 +682,27 @@ scheduleForm?.addEventListener("submit", async (e) => {
     }
 });
 
+async function updateMaxRoundsDisplay() {
+    const selectedCount = pairSelectedIds.size;
+    const maxRoundsDisplay = document.getElementById("maxRoundsDisplay");
+    if (!maxRoundsDisplay) return;
+    
+    if (selectedCount === 0) {
+        maxRoundsDisplay.textContent = "Select participants to calculate";
+        return;
+    }
+    
+    const format = pairForm?.querySelector('select[name="format"]')?.value ?? "SWISS";
+    
+    try {
+        const maxRounds = await api.getMaxRounds(format, selectedCount);
+        maxRoundsDisplay.textContent = `Maximum: ${maxRounds} round${maxRounds !== 1 ? 's' : ''}`;
+    } catch (err) {
+        maxRoundsDisplay.textContent = "Error calculating rounds";
+        console.error("Failed to calculate max rounds:", err);
+    }
+}
+
 pairForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearMessage(msg);
@@ -523,7 +723,11 @@ pairForm?.addEventListener("submit", async (e) => {
         ));
         renderMatches(data);
         latestSwissPairings = selectedFormat === "SWISS" ? [...data] : [];
+        saveLatestSwissPairings();
+        savePairingFormState();
         renderSwissBracket();
+        notifyTournamentGenerated(selectedFormat, data);
+        activateTournamentTab("bracket");
         showMessage(msg, `${selectedFormat} pairings generated.`);
     } catch (err) {
         showMessage(msg, err.message, false);
@@ -534,6 +738,7 @@ resultForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const payload = Object.fromEntries(new FormData(resultForm).entries());
     payload.matchId = Number(payload.matchId);
+    const selected = findOfflineMatchEntryById(payload.matchId);
     const resultType = String(payload.resultType ?? "");
     if (resultType === "WHITE_WIN") {
         payload.whiteScore = 1.0;
@@ -551,6 +756,18 @@ resultForm?.addEventListener("submit", async (e) => {
     delete payload.resultType;
     if (!Number.isFinite(payload.matchId) || payload.matchId <= 0) {
         showMessage(msg, "Select a valid loaded F2F match first.", false);
+        return;
+    }
+    if (!selected?.entry?.match) {
+        showMessage(msg, "Select a valid loaded F2F match first.", false);
+        return;
+    }
+    if (isByeMatch(selected.entry.match)) {
+        showMessage(msg, "This pairing is a bye and does not require a result.", false);
+        return;
+    }
+    if (!canSubmitResult(selected.entry.match)) {
+        showMessage(msg, "Result already recorded for this match.", false);
         return;
     }
     try {
@@ -611,7 +828,7 @@ resultMatchSelect?.addEventListener("change", () => {
     const key = String(resultMatchSelect.value ?? "");
     const match = offlineMatchesByRef.get(key)?.match;
     const hiddenIdInput = resultForm?.querySelector('input[name="matchId"]');
-    if (hiddenIdInput) hiddenIdInput.value = match?.matchId ? String(match.matchId) : "";
+    if (hiddenIdInput) hiddenIdInput.value = canSubmitResult(match) && match?.matchId ? String(match.matchId) : "";
     if (!resultTypeSelect) return;
     const side = winnerSide(match?.result);
     if (side === "white") resultTypeSelect.value = "WHITE_WIN";
@@ -626,13 +843,36 @@ swissBracket?.addEventListener("dblclick", (e) => {
     const side = String(playerButton.dataset.playerSide ?? "").toLowerCase();
     if (side !== "white" && side !== "black") return;
     const matchId = Number(playerButton.dataset.matchId);
-    void submitBracketWinner(matchId, side);
+    void recordBracketResult(matchId, side === "white" ? "WHITE_WIN" : "BLACK_WIN", {
+        allowEdit: getEditResultsSetting()
+    });
+});
+
+swissBracket?.addEventListener("click", (e) => {
+    const editButton = e.target.closest("[data-edit-match-id]");
+    if (!editButton) return;
+    const matchId = Number(editButton.dataset.editMatchId);
+    void promptEditBracketResult(matchId);
 });
 
 bindParticipantPicker(scheduleProfiles, scheduleForm, scheduleSelectedIds, scheduleSelectedCount);
 bindParticipantPicker(pairProfiles, pairForm, pairSelectedIds, pairSelectedCount);
 bindSingleParticipantPicker(historyProfiles, historyForm, historySelectedLabel);
+
+// Add event listener for format change to update max rounds
+const formatSelect = pairForm?.querySelector('select[name="format"]');
+formatSelect?.addEventListener("change", () => {
+    savePairingFormState();
+    updateMaxRoundsDisplay();
+});
+
+initTournamentTabs();
 initHistoryModeTabs();
 initScheduleDateInput();
+restoreLatestSwissPairings();
 renderSwissBracket();
 loadParticipantProfiles();
+
+window.addEventListener("app:settings-changed", () => {
+    renderSwissBracket();
+});

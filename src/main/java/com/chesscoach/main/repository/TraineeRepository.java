@@ -46,6 +46,16 @@ public interface TraineeRepository extends JpaRepository<Trainee, Long> {
     """)
     List<Trainee> findAllWithRatingsOrderedByRating();
 
+    @Query("""
+        SELECT DISTINCT t
+        FROM Trainee t
+        LEFT JOIN FETCH t.rapidRating r
+        WHERE t.deletedAt IS NULL
+          AND t.id IN :ids
+        ORDER BY COALESCE(r.currentRating, 1200) DESC, t.id ASC
+    """)
+    List<Trainee> findAllByIdInWithRatingsOrderedByRating(@Param("ids") List<Long> ids);
+
     Optional<Trainee> findByNameIgnoreCaseAndCoachId(String name, Long coachId);
 
     Optional<Trainee> findByChessUsernameIgnoreCase(String chessUsername);
